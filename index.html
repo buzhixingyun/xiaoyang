@@ -417,6 +417,111 @@
         .dialog-box.theme-gold h3 { color: #d4af37 !important; font-size: 1.6rem !important; }
         .dialog-box.theme-gold .dialog-pin { background: linear-gradient(45deg, #ffd700, #fdb931); opacity: 0.9; border: 1px solid #fff; }
 
+        /* Theme: Apology (Sincere/Letter) */
+        .dialog-box.theme-apology {
+            background-color: #fffcf5; /* Very light warm paper */
+            border: 2px dashed #d4a373;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+        }
+        .dialog-box.theme-apology::before {
+            content: '🥺'; /* Shy/Sincere emoji */
+            position: absolute; top: -25px; right: -10px; 
+            font-size: 3rem; 
+            animation: pulse 2s infinite;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1));
+        }
+        .dialog-box.theme-apology .dialog-pin {
+            background: rgba(212, 163, 115, 0.5); /* Brownish tape */
+            transform: translateX(-50%) rotate(1deg);
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* Theme: Letter (Long Text Scroll) */
+        .dialog-box.theme-letter {
+            background-color: #fffcf5;
+            /* Subtle lined paper effect */
+            background-image: repeating-linear-gradient(#fffcf5 0px, #fffcf5 2rem, #e8e8e8 2.05rem);
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+        }
+        .dialog-box.theme-letter .dialog-content {
+            line-height: 2.05rem; /* Sync with background lines */
+            font-size: 1.15rem;
+            max-height: 60vh; /* Scrollable area */
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-top: 0; /* Align with top line */
+            padding-top: 5px;
+            white-space: pre-wrap;
+            opacity: 0; transition: opacity 1s; /* Fade in */
+        }
+        /* Custom Scrollbar for Letter */
+        .dialog-box.theme-letter .dialog-content::-webkit-scrollbar { width: 5px; }
+        .dialog-box.theme-letter .dialog-content::-webkit-scrollbar-track { background: transparent; }
+        .dialog-box.theme-letter .dialog-content::-webkit-scrollbar-thumb { background: #d4a373; border-radius: 4px; opacity: 0.5; }
+        
+        .dialog-box.theme-letter .dialog-pin {
+            background: rgba(200, 200, 200, 0.3); /* Scotch tape look */
+            transform: translateX(-50%) rotate(-1.5deg);
+        }
+        
+        /* [NEW] Interactive Image Links inside Letter */
+        .img-link {
+            color: #4CAF50; /* Green */
+            font-weight: bold;
+            cursor: pointer;
+            border-bottom: 2px dashed #4CAF50;
+            margin: 0 2px;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .img-link:hover {
+            background-color: rgba(76, 175, 80, 0.1);
+            transform: scale(1.05);
+        }
+
+        /* [NEW] Image Modal Popup */
+        #img-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: none; /* Flex when active */
+            align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        #img-modal.active { opacity: 1; }
+
+        .img-modal-content {
+            position: relative;
+            max-width: 90%; max-height: 80vh;
+            background: white;
+            padding: 10px; border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #img-modal.active .img-modal-content { transform: scale(1); }
+
+        .img-modal-img {
+            max-width: 100%; max-height: 75vh;
+            display: block; border-radius: 4px;
+        }
+
+        .img-close-btn {
+            position: absolute; top: -15px; right: -15px;
+            width: 35px; height: 35px;
+            background: #FF8FA3; color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; font-weight: bold;
+            cursor: pointer; border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+            font-family: 'Fredoka One';
+        }
+        .img-close-btn:hover { transform: scale(1.1); background: #ff6b81; }
+
+
         @keyframes rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 
@@ -1116,7 +1221,7 @@
         <div class="dialog-box">  
             <div class="dialog-pin"></div>  
             <h3 style="color: #D4A373; font-size: 1.5rem; font-family: 'Fredoka One'; margin-bottom: 10px;">  
-                To: 最可爱的小胡同学 📝  
+                To: 世界上最可爱的龟龟 📝  
             </h3>  
             <div class="dialog-content" id="intro-text"></div>  
             <button class="action-btn disabled" id="btn-intro" onclick="startMemories()">开启回忆 &gt;</button>  
@@ -1132,13 +1237,51 @@
             <button class="action-btn disabled" id="btn-mem" onclick="nextMemory()">下一步 &gt;</button>  
         </div>
     </div>  
+
+    <!-- [NEW] Letter Stage -->
+    <div id="stage-letter" class="overlay-stage">
+        <div class="dialog-box theme-letter">
+            <div class="dialog-pin"></div>
+            <h3 style="color: #5d4037; font-size: 1.5rem; font-family: 'Fredoka One'; margin-bottom: 15px;">
+                To: 龟龟 🐢
+            </h3>
+            <div class="dialog-content letter-content" id="letter-text"></div>
+            <button class="action-btn disabled" id="btn-letter" onclick="finishLetter()">下一页 &gt;</button>
+        </div>
+    </div>
+    
+    <!-- [NEW] Image Modal Popup -->
+    <div id="img-modal" onclick="closeImgModal()">
+        <div class="img-modal-content" onclick="event.stopPropagation()">
+            <div class="img-close-btn" onclick="closeImgModal()">×</div>
+            <img id="popup-img" class="img-modal-img" src="" alt="Popup Image">
+        </div>
+    </div>
+
+    <!-- [NEW] Apology Modal (Sincere/Soft Style) -->
+    <div id="stage-apology" class="overlay-stage">
+        <div class="dialog-box theme-apology" style="border: 2px dashed #d4a373; background-color: #fffcf5; box-shadow: 0 15px 40px rgba(0,0,0,0.05);">
+            <div class="dialog-pin" style="background: rgba(212, 163, 115, 0.5); transform: translateX(-50%) rotate(1deg);"></div>
+            <!-- Decorative Emoji -->
+            <div style="position: absolute; top: -25px; right: -10px; font-size: 3rem; animation: pulse 2s infinite; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1));">🥺</div>
+            
+            <h3 style="color: #8d6e63; font-size: 1.5rem; font-family: 'Fredoka One'; margin-bottom: 10px;">
+                To: 世界上最可爱的龟龟 💌
+            </h3>
+            <div class="dialog-content" id="apology-text"></div>
+            <button class="action-btn disabled" id="btn-apology" onclick="finishApology()">没关系啦 &gt;</button>
+        </div>
+    </div>
+    <style>
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
   
     <!-- 游戏引导 -->  
     <div id="stage-2-invite" class="overlay-stage">  
         <div class="dialog-box">  
             <div class="dialog-pin"></div>  
             <h3 style="color: #D4A373; font-size: 1.5rem; font-family: 'Fredoka One'; margin-bottom: 10px;">  
-                To: 最可爱的小胡同学 📝  
+                To: 世界上最可爱的龟龟 📝  
             </h3>  
             <div class="dialog-content" id="invite-text"></div>  
             <!-- 全自动模式，隐藏按钮 -->
@@ -1163,7 +1306,7 @@
     <div id="stage-3-card" class="overlay-stage">  
         <div class="welcome-card">  
             <div class="ribbon"></div>  
-            <h2 class="card-title">To: 亲爱的你 ✨</h2>  
+            <h2 class="card-title">To: 亲爱的龟龟 ✨</h2>  
             <p class="card-text" style="font-size: 1.2rem;">  
                 集齐啦！<br>每一个方块都是我的心意。<br>圣诞快乐！  
             </p>  
@@ -1183,7 +1326,7 @@
             <div class="dialog-content" style="font-size: 1.4rem; color: #5d4037; min-height: auto;">
                 竟然被你找到了！<br>
                 我们的暗语是：<br>
-                <span style="font-size: 2rem; color: #FF8FA3; font-weight: bold; display: block; margin: 15px 0; font-family: 'Fredoka One';">11050830</span>
+                <span style="font-size: 2rem; color: #FF8FA3; font-weight: bold; display: block; margin: 15px 0; font-family: 'Fredoka One';">05010803</span>
                 快来找我兑换礼物吧 🤩
             </div>
             <button class="action-btn" style="float:none;" onclick="closeSecret()">收到 🎁</button>
@@ -1193,7 +1336,7 @@
     <!-- 最终场景 (Redesigned with Cozy Decor) -->  
     <div id="main-scene">  
         <div class="scene-header">
-            <h1 class="final-title">Merry Christmas! 小胡同学</h1>  
+            <h1 class="final-title">Merry Christmas! 小小洋</h1>  
             <div class="final-subtitle">属于你的可爱冬天 ✨</div>
         </div>
         
@@ -1278,19 +1421,51 @@
         
         // [UPDATED] 使用 Gitee 直链 (需配合 meta no-referrer 使用)
         const PHOTO_MEMORIES = [
-            "https://gitee.com/konatatata/material/raw/master/e74e3566a563c744640a12eac2a8ec7f.png",
-            "https://gitee.com/konatatata/material/raw/master/cd2319e76c903b0304e99337459f69b2.png",
-            "https://gitee.com/konatatata/material/raw/master/ca3e6bb9323f7264aadaa546fcc2f78a.png",
-            "https://gitee.com/konatatata/material/raw/master/bfbe9a1ea6b05d767dc8638d8d6e6d5b.png",
-            "https://gitee.com/konatatata/material/raw/master/ba6fb3bc26dff7f50583799adc031631.png",
-            "https://gitee.com/konatatata/material/raw/master/4e8633b4303b506c640aad08a823b80d.png",
-            "https://gitee.com/konatatata/material/raw/master/4c25d1c56fb6738b06ddba8ad941171e.png",
-            "https://gitee.com/konatatata/material/raw/master/43d9364bcbbd63e09b7e0d780cf484b4.png",
-            "https://gitee.com/konatatata/material/raw/master/3abddf62b53ddde2fdfa4aa20a010ab5.png",
-            "https://gitee.com/konatatata/material/raw/master/1379315fd98cbb7084ae18c5c4eed204.png"
+            "https://gitee.com/konatatata/material/raw/master/0f3644211c1bd9a58b81fbda7a6879c0.png",
+            "https://gitee.com/konatatata/material/raw/master/28d42daec6c4e7f78ec4008c3e2261f5.png",
+            "https://gitee.com/konatatata/material/raw/master/3edac3bda0e1697bf4cb43c1a58dd9e2.png",
+            "https://gitee.com/konatatata/material/raw/master/503b5d09f525d95635caaaa73dd2c5d9.png",
+            "https://gitee.com/konatatata/material/raw/master/cd08977fd59489c4d68284c988bbd7aa.png",
+            "https://gitee.com/konatatata/material/raw/master/e92157557bb67f7c18175582c0d22221.png"
+        ];
+        
+        // [NEW] Letter Image URLs (Placeholders for you to fill)
+        const LETTER_IMG_URLS = [
+            "https://gitee.com/konatatata/material/raw/master/ecd4290d63d9237557aae9567c0fd41b.png", // 对应图片1
+            "https://gitee.com/konatatata/material/raw/master/79f2f750cd600afdbabc329793bbe2b9.png", // 对应图片2
+            "https://gitee.com/konatatata/material/raw/master/76a3e270909fbed4f0de77f46151cf55.png", // 对应图片3
+            "https://gitee.com/konatatata/material/raw/master/731652f7b41904bb39f0deecb097f6fd.png", // 对应图片4
+            "https://gitee.com/konatatata/material/raw/master/38f5834edb940b80087ef844a27ffd23.png"  // 对应图片5
         ];
 
-        const INTRO_TEXT = "这是我们认识后我陪你度过的第一个圣诞节\n谨以此纪念我们的友谊\n在这个寒冷的冬天，希望可以为你带来一丝温暖";
+        const INTRO_TEXT = "这是我严格意义上第一次送你的圣诞礼物\n谨以此纪念我们的友谊";
+        // [NEW] Long Letter Text with Interactive Image Links
+        const LETTER_TEXT = `亲爱的龟龟：
+
+展信佳。
+
+其实有很多话想对你说，但每次话到嘴边又不知道从何说起。
+这个圣诞节，想用这种特别的方式，把我的碎碎念都写下来。
+
+那就从我自身开始说起吧，不知从何时起，我也渐渐变成了我讨厌的模样，我时常在想现在的我真是四年前理想中的我吗？现实给予了答案：不是。以前的我想交很多很多的朋友，想和所有人打好关系，同时不忽略来找我玩的任何一个人的感受，所以四年前的我是开朗的，乐观的，敢于社交、敢于做一些未尝试的东西，而这些特性是现在的我无法具备的。现在的我充满了懦弱，固步自封，甚至已经处理不好和你的聊天了，我总觉得开错了玩笑或者做了什么错误的事情这段关系就会出现问题，而我也不会哄人，没有任何哄过我我不知道做错了除了道歉应该干什么，这可能就是你口中的铁直男吧？与你相处我会将我的幽默性扼杀，这也是你和我玩感觉到枯燥的原因吧。可能你会觉得区别对待了，为什么我在其他人面前不是这样，答案只有四个字：你不一样。正如我所说，你对我来说是有着复杂感情的。从咸鱼认识聊天一起玩光遇互称监护崽崽，当时的我对你的情感很简单，仅仅只是朋友+把你当妹妹看，你很可爱当时的我们很聊得来。再到后面更加熟悉，开始聊生活聊，慢慢的也会产生依赖，毕竟人啊很需要一个能共情自己的人，以至于后面我情绪崩溃打电话的人也是你，让你见笑了我也会哭的跟个小孩子一样。那段时间的记忆我真的记不清太多了，药物的副作用让我后面一年多浑浑噩噩，我也真的记不清你什么时候问过我怎么看待这段关系的，从你后面的口中得知我说的是没把你当朋友，或许当时的我真是这么说的，但谁知道呢我真的已经记不清了。在这里再回答一下QQ最后那句‘处对象吗’，站在当时的心境来说，一方面承受着被那个女人的pua，另一方面我也做了相同的事情，拿高中同学当作她的替身，狗咬狗一嘴毛，谁也没得到好处还害了一个高中同学，只不过最后良心过不去跟她坦白后心理压力愈发的大，用现在的话来说性压抑了？哈哈大概就是如此了，在发完那句话之后我就给你删了，因为我不知道你会不会看见会不会同意，如果同意那你将与那个高中同学一样成为替身，如果不同意我心里也会落空，具体情况就是这样了。我是一个非常内疚的人（这并不意味着我不用为我的过错负责，罪人就是罪人），夜深人静会将自己犯过的错一个一个翻出来自我批判，再加上那段时间的精神压力，所以就抑郁啦。后面休学在家我们也没有联系了，陈年旧事无关的也就不在这里说了。微信给你发的那一句测单删其实也是在我新谈的对象分手之后那段时间给你发的，实际上在23年的时候我已经想起来很多事情，自我和解，只不过后面的我成了一个压抑情绪、隐藏内心，从不主动的人也就是你现在看见的我，对任何人都会保持一个非常明显的边界，我很害怕因为自己的错又导致一个伤心的人，我不主动那就不会犯错，这也是我现在的行动准则，我是一个别人凶我后会反思对方是否不容易以及我做错了什么的人，现在的我更现实一点？实际上是没招了，这方面的心结可能这辈子过不去。
+
+现在来说几个关于你的，首先给你看几个图片吧（点击绿色字体可查看）。
+<span class="img-link" onclick="showImgModal(0)">图片1</span> <span class="img-link" onclick="showImgModal(1)">图片2</span> <span class="img-link" onclick="showImgModal(2)">图片3</span> <span class="img-link" onclick="showImgModal(3)">图片4</span> <span class="img-link" onclick="showImgModal(4)">图片5</span>
+内容可能有点低俗但我在俩儿子面前是最坦诚的，说这些话的这段时间是打王者冷战的那段时间，如果觉得语言很恶心或者冒犯到你，非常对不起。我们没有共同好友所以说什么就代表我想什么，也没必要存在做戏给你看。我不主动找你玩是因为图片里面说的网友关系是一方面，另一方面出于我自己和你，我：现在我已经不会主动找人玩了而我也告诉你很多次。你主动找我玩我就会很热情的迎合你。你：每次发信息都是我结尾，或者你不回我或者回的很慢，就好似刚烧的火被人拿水壶喷了一下，久而久之我就不想再主动找你。
+
+叽里呱啦说了一堆废话好似没说，再回答两个自以为是的问题吧：1今年到现在有喜欢过你吗，有过，原因是室友起哄以及个人情感需求吧，好了我承认我性压抑了/(ㄒoㄒ)/~~2，我身边并没有很多朋友，只有两儿子和我崽崽联系的最勤快，头像啊什么什么之类的也都是跟我崽子用的，主要是也找不到人跟我用了3，为什么不像之前一样主动问你发生的事/聊更暧昧的东西/，是因为我不会再去猜测我在别人心中的地位了TVT4，为什么又重新玩光遇并且不太愿意打王者，这个原因我在你今年刚开始找我的时候就已经说了，我现在很菜，打不动了，只想玩一些娱乐向的游戏，我是个非常非常念旧的人，这就是我玩光遇的原因
+
+最后，我就在这，一直在这。
+
+在这献上最真挚的祝福，愿你身体健康，万事顺心。
+
+...
+
+愿你永远开心快乐！`;
+        
+        // [NEW] Apology Text Placeholder
+        const APOLOGY_TEXT = "（或许是我不够珍视，或许是我太粗心大意，以至于没有找到很多我们之间的共同回忆，但正如我所说过的，回忆会让人睡不着觉，在这里说声抱歉啦）\n\n虽然我也许有些笨拙\n但想让你开心的心意\n永远都是真的";
+        
         const INVITE_TEXT = "Hello，圣诞快乐！\n这里有一份特别的礼物送给你。\n准备好了吗？";
 
         const MESSAGES = [  
@@ -1305,13 +1480,13 @@
         const MEMORIES = [
             { t: "(1/9) 🌱", c: "还记得我们刚认识的时候吗？\n那时虽然有些拘谨，\n但每一次对话都让我觉得特别投缘。\n像是春风吹进了心里。", theme: 'sakura' },
             { t: "(2/9) 📱", c: "后来我们越来越熟悉，\n开始分享彼此的喜怒哀乐，\n哪怕是生活里的芝麻小事，\n也总想第一时间告诉你。", theme: 'planes' },
-            { t: "(3/9) 🎮", c: "最开心的就是和你一起打游戏！\n不管是王者荣耀还是和平精英...\n每一次组队开黑，\n都是我们专属的快乐时光！", theme: 'gaming' },
+            { t: "(3/9) 🎮", c: "最开心的就是和你一起打游戏！\n不管是王者荣耀还是单纯聊天...\n每一次组队开黑，\n都是我们专属的快乐时光！", theme: 'gaming' },
             { t: "(4/9) 💪", c: "当然也有一起emo的时候，\n互相吐槽生活的不易、工作的烦恼。\n但只要互相打打气，\n好像就又有了继续升级打怪的动力。", theme: 'warmth' },
             { t: "(5/9) 😂", c: "谢谢你总是能接住我的奇奇怪怪，\n那些只有我们懂的梗，\n每次想起来都会忍不住嘴角上扬。\n和你聊天真的超级轻松快乐。", theme: 'laugh' },
             { t: "(6/9) ❄️", c: "不知不觉，\n又一起走过了一个春夏秋冬，\n迎来了这个浪漫的圣诞节。\n因为有你，这个冬天好像也没那么冷了。", theme: 'winter' },
             { t: "(7/9) ✨", c: "圣诞节到了，\n想把星星摘下来送给你，\n想把世界上最美好的祝福都给你。\n希望你每天都能遇见属于你的小确幸。", theme: 'stars' },
             { t: "(8/9) 🎈", c: "谢谢你出现在我的生命里，\n成为我特别的朋友。\n希望在未来的日子里，\n我们可以继续一起大笑，一起可可爱爱。", theme: 'balloons' },
-            { t: "(9/9) 🎄", c: "最后，\n亲爱的小胡同学，\n愿你永远被爱包围，万事胜意！\n圣诞快乐，不止圣诞，每天都快乐！", theme: 'gold' }
+            { t: "(9/9) 🎄", c: "最后，\n亲爱的小小洋，\n愿你永远被爱包围，万事胜意！\n圣诞快乐，不止圣诞，每天都快乐！", theme: 'gold' }
         ];
 
         // 99条不重复的祝福语
@@ -1332,7 +1507,7 @@
             "雪花是冬天的来信。", "你是我的独家记忆。", "友谊的小船永不翻。", "干杯🍻", "Cheer up!",
             "Be happy!", "Good luck!", "Merry Christmas!", "Happy New Year!", "Nice to meet you!",
             "愿梦里有星辰。", "醒来有阳光。", "嘴角上扬15度。", "今天也是元气满满的一天！", "冲鸭！",
-            "加油，小胡同学！", "没有什么可以打倒你。", "相信自己。", "你值得最好的一切。", "拥抱未来。",
+            "加油，小小洋！", "没有什么可以打倒你。", "相信自己。", "你值得最好的一切。", "拥抱未来。",
             "不负韶华。", "只争朝夕。", "快乐至上。", "知足常乐。", "顺其自然。",
             "随遇而安。", "心之所向。", "素履以往。", "可可爱爱。", "奇奇怪怪。",
             "没有文案，只有祝福。", "最后一条：永远快乐！", "特别的爱给特别的你。", "愿你三冬暖。", "愿你春不寒。",
@@ -1374,7 +1549,7 @@
 
         function checkBypass() {
             const input = document.getElementById('bypass-input');
-            if(input.value === '0803') {
+            if(input.value === '0124') {
                 closeBypass();
                 // Start Unlock
                 unlockAndStart();
@@ -1742,6 +1917,9 @@
                     const char = text.charAt(i);
                     element.innerHTML += (char === '\n' ? '<br>' : char);
                     i++;
+                    // [MODIFIED] Auto scroll logic: 
+                    // Only scroll if it's NOT a long scrollable text area, or ensure we see the bottom.
+                    // For the letter, we want to type it out. User can scroll up if they missed top.
                     element.parentElement.scrollTop = element.parentElement.scrollHeight;
                 } else {
                     clearInterval(t);
@@ -1802,9 +1980,61 @@
                 renderMemory(currentMemIndex + 1);
             } else {
                 applyTheme('default'); // 恢复默认背景
-                // [CHANGED] Go to Photo Slideshow instead of Invite
-                startPhotoSlideshow();
+                // [CHANGED] 9 memories done -> Go to Letter Stage
+                showLetter();
             }
+        }
+        
+        // [NEW] Show Letter Stage with Fade In (No Typewriter for better HTML support)
+        function showLetter() {
+            showStage('stage-letter');
+            const textEl = document.getElementById('letter-text');
+            const btn = document.getElementById('btn-letter');
+            
+            // Use HTML rendering directly
+            // Replace newlines with <br> but keep HTML tags intact
+            // Since LETTER_TEXT is defined with template literals, newlines are preserved
+            // We need to carefully handle newlines outside of HTML tags if possible, or just global replace.
+            // A global replace \n to <br> is safe for the provided text.
+            textEl.innerHTML = LETTER_TEXT.replace(/\n/g, '<br>');
+            
+            // Trigger Fade In
+            setTimeout(() => {
+                textEl.style.opacity = '1';
+                enableBtn('btn-letter');
+            }, 600);
+        }
+        
+        // [NEW] Show Image Modal
+        function showImgModal(index) {
+            const modal = document.getElementById('img-modal');
+            const img = document.getElementById('popup-img');
+            const url = LETTER_IMG_URLS[index];
+            
+            if(url) {
+                img.src = url;
+                modal.style.display = 'flex';
+                // Force reflow
+                void modal.offsetWidth;
+                modal.classList.add('active');
+            } else {
+                alert("图片链接未配置");
+            }
+        }
+        
+        // [NEW] Close Image Modal
+        function closeImgModal() {
+            const modal = document.getElementById('img-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.getElementById('popup-img').src = '';
+            }, 300);
+        }
+        
+        // [NEW] Finish Letter -> Go to Photo Slideshow
+        function finishLetter() {
+            startPhotoSlideshow();
         }
 
         function startHeartAnimation() {
@@ -1901,23 +2131,10 @@
 
         // [NEW] Photo Slideshow Logic
         function startPhotoSlideshow() {
-            // Define function to go to next stage (Invite/Game)
+            // Define function to go to next stage
             const nextStage = () => {
-                 // [BGM SWITCH] 切换背景音乐
-                 const bgm = document.getElementById('bgm');
-                 if(bgm) {
-                     // 网易云纯音乐直链 -> Gitee MP3
-                     bgm.src = "https://gitee.com/konatatata/material/raw/master/Santa's%20Christmas%20Bells%20-%20Jingle%20Bells.mp3";
-                     bgm.play().catch(e => console.log("Switch BGM play failed", e));
-                 }
-
-                 showStage('stage-2-invite');
-                 setTimeout(() => {
-                    typeWriter(document.getElementById('invite-text'), INVITE_TEXT, () => {
-                        // 自动流程：1.5秒后自动开始游戏
-                        setTimeout(startHeartAnimation, 1500);
-                    });
-                }, 600);
+                // [NEW FLOW] Show Apology First
+                showApology();
             };
 
             if (!PHOTO_MEMORIES || PHOTO_MEMORIES.length === 0) {
@@ -1933,7 +2150,7 @@
             // Start animation loop
             const playSlide = () => {
                 if (idx >= PHOTO_MEMORIES.length) {
-                    // Finished, go to Game Invite
+                    // Finished, go to next
                     nextStage();
                     return;
                 }
@@ -1964,6 +2181,36 @@
             };
 
             playSlide();
+        }
+
+        // [NEW] Show Apology Stage
+        function showApology() {
+            showStage('stage-apology');
+            setTimeout(() => {
+                const el = document.getElementById('apology-text');
+                typeWriter(el, APOLOGY_TEXT, () => {
+                    enableBtn('btn-apology');
+                });
+            }, 600);
+        }
+
+        // [NEW] Finish Apology -> Go to Invite
+        function finishApology() {
+             // [BGM SWITCH] 切换背景音乐 - Moved here after apology
+             const bgm = document.getElementById('bgm');
+             if(bgm) {
+                 // 网易云纯音乐直链 -> Gitee MP3 (Jingle Bells)
+                 bgm.src = "https://gitee.com/konatatata/material/raw/master/Santa's%20Christmas%20Bells%20-%20Jingle%20Bells.mp3";
+                 bgm.play().catch(e => console.log("Switch BGM play failed", e));
+             }
+
+             showStage('stage-2-invite');
+             setTimeout(() => {
+                typeWriter(document.getElementById('invite-text'), INVITE_TEXT, () => {
+                    // 自动流程：1.5秒后自动开始游戏
+                    setTimeout(startHeartAnimation, 1500);
+                });
+            }, 600);
         }
 
         // === NEW: Handle Balloon Interaction ===
