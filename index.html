@@ -1,0 +1,2120 @@
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <!-- 禁用缩放，优化移动端体验 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
+    <!-- [关键修改] 添加 no-referrer 策略，尝试绕过 Gitee 等国内图床的防盗链检查 -->
+    <meta name="referrer" content="no-referrer">
+    <title>Merry Christmas! 🎄</title>  
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">  
+  
+    <style>  
+        /* --- 1. 核心配色与基础设置 --- */  
+        :root {  
+            --bg-color: #FFFBF0;        
+            --primary: #FF8FA3;         
+            --secondary: #B5EAD7;       
+            --text-color: #D4A373;      
+            --accent: #FFE577;          
+            --card-bg: #FFFFFF;  
+            --paper-color: #FFF8E7;  
+        }  
+  
+        * { margin: 0; padding: 0; box-sizing: border-box; }  
+  
+        body {  
+            background-color: var(--bg-color);
+            color: var(--text-color);  
+            font-family: 'Nunito', 'Ma Shan Zheng', sans-serif;   
+            overflow: hidden;   
+            height: 100vh; height: 100dvh; width: 100vw;  
+            cursor: default;   
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1); /* 背景色丝滑过渡 */
+        }  
+
+        /* --- Countdown Lock Screen (Highest Priority) --- */
+        #countdown-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            /* High Z-Index to block normal content */
+            z-index: 2000000000; 
+            /* Flex centered. Removed !important to allow JS to hide it correctly */
+            display: flex; 
+            flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+        .lock-icon { 
+            font-size: 4rem; margin-bottom: 20px; 
+            animation: swing 3s infinite ease-in-out;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+            cursor: pointer; /* Hint for interaction */
+            user-select: none;
+        }
+        .lock-icon:active { transform: scale(0.9); }
+
+        .countdown-title { 
+            font-family: 'Ma Shan Zheng'; font-size: 1.4rem; color: #8d6e63; margin-bottom: 25px; 
+            letter-spacing: 2px;
+        }
+        .countdown-timer {
+            font-family: 'Fredoka One', monospace; font-size: 1.8rem; color: var(--primary);
+            background: rgba(255,255,255,0.9); 
+            padding: 20px 20px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(255, 143, 163, 0.15);
+            border: 3px dashed #FF8FA3;
+            min-width: 280px; text-align: center;
+            display: flex; justify-content: center; gap: 8px;
+        }
+        .timer-part { display: flex; flex-direction: column; align-items: center; width: 55px; }
+        .timer-val { line-height: 1; }
+        .timer-label { font-size: 0.6rem; color: #aaa; margin-top: 8px; font-family: sans-serif; font-weight: normal; }
+        .timer-sep { opacity: 0.5; margin-top: -5px; }
+
+        .countdown-tips {
+            margin-top: 40px; font-size: 0.9rem; color: #bcaaa4; 
+            font-family: 'Ma Shan Zheng'; opacity: 0.8;
+            max-width: 80%; text-align: center; line-height: 1.6;
+        }
+
+        /* --- Bypass Modal (Higher than countdown) --- */
+        #bypass-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000000001; /* Higher than countdown-layer */
+            display: none;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .bypass-box {
+            background: white; padding: 30px; border-radius: 20px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 80%; max-width: 300px;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .bypass-input {
+            width: 100%; padding: 10px; margin: 20px 0;
+            border: 2px solid #eee; border-radius: 10px;
+            font-size: 1.2rem; text-align: center; font-family: 'Fredoka One';
+            color: var(--primary); outline: none;
+        }
+        .bypass-input:focus { border-color: var(--primary); }
+        .bypass-btns { display: flex; gap: 10px; justify-content: center; }
+        .bypass-btn {
+            padding: 8px 20px; border: none; border-radius: 20px;
+            font-family: 'Ma Shan Zheng'; cursor: pointer; font-size: 1rem;
+            transition: transform 0.1s;
+        }
+        .bypass-btn:active { transform: scale(0.95); }
+        .btn-confirm { background: var(--primary); color: white; }
+        .btn-cancel { background: #eee; color: #666; }
+
+
+        /* --- Loading Screen (Optimized) --- */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 9999;
+            /* Default hidden, shown by JS if unlocked */
+            display: none; 
+            flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-out;
+        }
+        
+        /* 跳动的礼物图标 */
+        .loading-icon {
+            font-size: 4.5rem;
+            animation: bounceGift 1s infinite alternate ease-in-out;
+            filter: drop-shadow(0 15px 15px rgba(255, 143, 163, 0.3));
+            margin-bottom: 20px;
+        }
+        @keyframes bounceGift {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-15px) scale(1.1); }
+        }
+
+        /* 进度条容器 */
+        .loading-bar-container {
+            width: 200px; height: 10px; background: #FFF0F5;
+            border-radius: 20px; overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        /* 进度条本体 */
+        .loading-bar {
+            width: 0%; height: 100%; 
+            background: var(--primary);
+            border-radius: 20px;
+            transition: width 1.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+            /* 条纹动画 */
+            background-image: linear-gradient(45deg,rgba(255,255,255,.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.2) 75%,transparent 75%,transparent);
+            background-size: 20px 20px;
+            animation: progressStripes 1s linear infinite;
+        }
+        @keyframes progressStripes { from { background-position: 20px 0; } to { background-position: 0 0; } }
+
+        .loading-text {
+            margin-top: 15px; font-family: 'Ma Shan Zheng'; 
+            color: var(--text-color); font-size: 1.1rem; 
+            opacity: 0.9; letter-spacing: 1px;
+        }
+
+        /* --- Background Layers --- */
+        
+        /* 1. 基础背景层 (渐变/图标) */
+        #bg-base-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; overflow: hidden;
+            background: linear-gradient(-45deg, #fff5f5, #e8f5e9, #fffde7, #fff0f5);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            transition: opacity 1.5s ease;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 2. 特效层 (回忆专属动画) */
+        #theme-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none; overflow: hidden;
+            transition: opacity 1s ease;
+        }
+
+        /* 3. 全局雪花层 (默认最上层，但不会挡住弹窗) */
+        #snow-container {  
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;  
+            pointer-events: none; z-index: 2; 
+        } 
+
+        /* --- 顶部装饰 --- */
+        .light-rope {
+            position: fixed; top: -15px; left: 0; width: 100%; height: 60px;
+            z-index: 100; pointer-events: none;
+            display: flex; justify-content: space-around;
+            overflow: hidden;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .light-rope.hidden { transform: translateY(-100px); }
+
+        .light-bulb {
+            position: relative; width: 16px; height: 36px; border-radius: 50%;
+            background: #fff; margin-top: 10px;
+            animation: swing 3s ease-in-out infinite alternate, glow 1.5s infinite alternate;
+        }
+        .light-bulb::before {
+            content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+            width: 6px; height: 8px; background: #444;
+        }
+        .light-wire {
+            position: absolute; top: -5px; left: 0; width: 100%; height: 25px;
+            border-bottom: 2px solid #444; border-radius: 50%; z-index: 99;
+        }
+        .light-bulb:nth-child(2n) { background: #FF8FA3; box-shadow: 0 5px 15px rgba(255, 143, 163, 0.6); animation-delay: 0.2s; }
+        .light-bulb:nth-child(2n+1) { background: #B5EAD7; box-shadow: 0 5px 15px rgba(181, 234, 215, 0.6); animation-delay: 0.5s; }
+        .light-bulb:nth-child(3n) { background: #FFE577; box-shadow: 0 5px 15px rgba(255, 229, 119, 0.6); animation-delay: 0.8s; }
+        @keyframes swing { 0% { transform: rotate(-3deg); } 100% { transform: rotate(3deg); } }
+        @keyframes glow { 0% { opacity: 0.7; } 100% { opacity: 1; transform: scale(1.1); } }
+
+        /* --- Music Control --- */
+        #music-control {
+            position: fixed; top: 20px; right: 20px;
+            width: 44px; height: 44px; 
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 22px;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+        #music-control:active { transform: scale(0.9); }
+        #music-control.playing { animation: spin 4s linear infinite; color: var(--primary); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+  
+        /* --- Stage Layout (Container) --- */  
+        .overlay-stage {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 500;
+            /* 默认隐藏状态 */
+            opacity: 0; visibility: hidden; pointer-events: none;
+            backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px);
+            /* 转场动画配置 */
+            transition: opacity 0.6s ease, backdrop-filter 0.6s ease, visibility 0.6s;
+        }
+
+        /* 激活状态 */
+        .overlay-stage.active { 
+            opacity: 1; visibility: visible; pointer-events: auto;
+            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+        }
+
+        /* --- Dialog Box (Redesigned & Themed) --- */
+        .dialog-box {  
+            background-color: var(--paper-color);  
+            width: 88%; max-width: 440px; padding: 40px 30px; 
+            border-radius: 20px;  
+            /* Default style */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            position: relative; 
+            max-height: 85vh; overflow-y: visible; 
+            -webkit-overflow-scrolling: touch;
+            z-index: 501;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease, background-color 0.5s, border 0.5s, box-shadow 0.5s;
+            
+            transform: scale(0.8) translateY(30px); 
+            opacity: 0;
+        }
+
+        /* Tape Style Pin (Default) */
+        .dialog-pin {  
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%) rotate(-1.5deg);
+            width: 110px; height: 32px; 
+            background: rgba(255, 143, 163, 0.5); /* Primary semitransparent */
+            backdrop-filter: blur(3px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-radius: 2px;
+            z-index: 10;
+        }  
+        /* Tape texture */
+        .dialog-pin::after {
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
+            background-size: 10px 10px; opacity: 0.5;
+        }
+
+        /* 弹窗激活：回弹到正常大小 */
+        .overlay-stage.active .dialog-box { 
+            transform: scale(1) translateY(0); 
+            opacity: 1; 
+        }
+        .overlay-stage.exit .dialog-box {
+            transform: scale(1.1) translateY(-10px);
+            opacity: 0;
+            transition: transform 0.5s ease-in, opacity 0.4s ease;
+        }
+
+        .dialog-content {  
+            margin-top: 15px; font-family: 'Ma Shan Zheng', cursive; font-size: 1.35rem;  
+            line-height: 1.8; color: #5d4037; text-align: left; min-height: 80px;
+            transition: color 0.3s;
+        }
+        .typing-cursor::after { content: '|'; animation: blink 1s infinite; color: var(--primary); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .action-btn {  
+            background-color: var(--primary); color: white;  
+            font-family: 'Fredoka One'; font-size: 1.1rem; letter-spacing: 1px;
+            padding: 12px 32px; border: none; border-radius: 50px;  
+            margin-top: 30px; cursor: pointer; float: right;  
+            box-shadow: 0 4px 0 #d86c7f;  
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.3s;
+            user-select: none;
+        }  
+        .action-btn:active { transform: translateY(4px); box-shadow: none; }  
+        .action-btn.disabled { opacity: 0.6; pointer-events: none; filter: grayscale(1); }
+
+        /* ================= THEME SPECIFIC DIALOG STYLES ================= */
+        
+        /* 1. Sakura (Spring/Pink) */
+        .dialog-box.theme-sakura {
+            background-color: #fff0f5;
+            border: 3px solid #ffc1e3;
+            box-shadow: 0 15px 30px rgba(255, 182, 193, 0.3);
+        }
+        .dialog-box.theme-sakura::before {
+            content: '🌸'; position: absolute; top: -15px; right: -10px; font-size: 2rem; animation: rot 8s linear infinite;
+        }
+        .dialog-box.theme-sakura .dialog-pin { background: rgba(255, 105, 180, 0.4); }
+
+        /* 2. Planes (Airmail) */
+        .dialog-box.theme-planes {
+            background-color: #fcfcfc;
+            background-image: repeating-linear-gradient(135deg, #e3f2fd 0px, #e3f2fd 10px, #fff 10px, #fff 20px);
+            border: 3px dashed #87ceeb;
+            box-shadow: 10px 10px 0 rgba(135, 206, 235, 0.3);
+        }
+        .dialog-box.theme-planes .dialog-pin { background: rgba(65, 177, 225, 0.6); transform: translateX(-50%) rotate(2deg); }
+
+        /* 3. Gaming (Dark/Neon) */
+        .dialog-box.theme-gaming {
+            background: #2d1b4e;
+            border: 2px solid #00ff9d;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+        }
+        .dialog-box.theme-gaming h3 { color: #00ff9d !important; text-shadow: 0 0 8px rgba(0,255,157,0.5); }
+        .dialog-box.theme-gaming .dialog-content { color: #e0e0e0; }
+        .dialog-box.theme-gaming .action-btn { background: #7000ff; box-shadow: 0 4px 0 #4a00ac; }
+        .dialog-box.theme-gaming .dialog-pin { display: none; }
+        .dialog-box.theme-gaming::after {
+            content: 'PRESS START'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: #00ff9d; color: #2d1b4e; font-family: 'Fredoka One'; font-size: 0.8rem; padding: 2px 10px; border-radius: 4px;
+        }
+
+        /* 4. Warmth (Cozy Orange) */
+        .dialog-box.theme-warmth {
+            background: linear-gradient(to bottom, #fff8e1, #ffecb3);
+            border: 4px solid #ffb74d;
+            border-radius: 25px;
+            box-shadow: 0 15px 30px rgba(255, 167, 38, 0.25);
+        }
+        .dialog-box.theme-warmth .dialog-content { color: #d84315; }
+        .dialog-box.theme-warmth .dialog-pin { background: rgba(255, 167, 38, 0.5); }
+
+        /* 5. Laugh (Pop Art) */
+        .dialog-box.theme-laugh {
+            background-color: #fff;
+            background-image: radial-gradient(#fff176 20%, transparent 20%);
+            background-size: 20px 20px;
+            border: 4px solid #ffee58;
+            box-shadow: 8px 8px 0 #fdd835;
+        }
+        .dialog-box.theme-laugh .action-btn { background: #fbc02d; box-shadow: 0 4px 0 #f57f17; color: #fff; }
+
+        /* 6. Winter (Frosted) */
+        .dialog-box.theme-winter {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid #b3e5fc;
+            box-shadow: 0 0 25px rgba(179, 229, 252, 0.6);
+        }
+        .dialog-box.theme-winter h3 { color: #4fc3f7 !important; }
+        .dialog-box.theme-winter .dialog-pin { background: rgba(179, 229, 252, 0.8); }
+
+        /* 7. Stars (Night) */
+        .dialog-box.theme-stars {
+            background: linear-gradient(160deg, #1a237e, #3949ab);
+            border: 1px solid #7986cb;
+            box-shadow: 0 15px 40px rgba(26, 35, 126, 0.5);
+        }
+        .dialog-box.theme-stars h3 { color: #fff59d !important; }
+        .dialog-box.theme-stars .dialog-content { color: #e8eaf6; }
+        .dialog-box.theme-stars .action-btn { background: #5c6bc0; box-shadow: 0 4px 0 #3949ab; }
+        .dialog-box.theme-stars .dialog-pin { background: #ffd54f; height: 12px; width: 12px; border-radius: 50%; top: 15px; box-shadow: 0 0 10px #ffd54f; opacity: 1; transform: translateX(-50%); border:none;}
+        .dialog-box.theme-stars .dialog-pin::after { display: none; }
+
+        /* 8. Balloons (Playful) */
+        .dialog-box.theme-balloons {
+            background: #fff;
+            border: 5px solid;
+            border-image: linear-gradient(to right, #ff9a9e, #fad0c4, #a18cd1) 1;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        /* 9. Gold (Elegant) */
+        .dialog-box.theme-gold {
+            background: #fffbf0;
+            border: 3px double #ffd700;
+            box-shadow: 0 20px 50px rgba(218, 165, 32, 0.3);
+        }
+        .dialog-box.theme-gold h3 { color: #d4af37 !important; font-size: 1.6rem !important; }
+        .dialog-box.theme-gold .dialog-pin { background: linear-gradient(45deg, #ffd700, #fdb931); opacity: 0.9; border: 1px solid #fff; }
+
+        @keyframes rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+
+        /* --- Heart Animation Layer (Optimized) --- */  
+        #game-layer {  
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 600; pointer-events: none;   
+        }  
+        .msg-box {  
+            position: absolute; width: 60px; height: 60px; 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            border-radius: 16px; 
+            display: flex; align-items: center; justify-content: center;  
+            text-align: center; padding: 2px; 
+            font-size: 15px; font-weight: bold; color: #8d6e63; 
+            /* 玻璃拟态阴影 */
+            box-shadow: 
+                0 4px 6px rgba(0,0,0,0.05), 
+                inset 0 0 0 1px rgba(255,255,255,0.6),
+                inset 0 2px 5px rgba(255,255,255,0.8);
+            font-family: 'Ma Shan Zheng', cursive; 
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 0; transform: scale(0);
+        }  
+        /* 悬浮呼吸动画 */
+        .msg-box.floating { animation: boxFloat 3s ease-in-out infinite alternate; }
+        @keyframes boxFloat { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-6px) scale(1.05); } }
+        
+        /* 粒子爆炸 (纯CSS实现) */
+        .particle {
+            position: absolute; width: 6px; height: 6px; border-radius: 50%;
+            pointer-events: none; opacity: 0;
+        }
+        @keyframes explode { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+
+        /* 颜色配置 */
+        .msg-box:nth-child(4n+1) { background: rgba(255, 209, 220, 0.95); color: #fff; }  
+        .msg-box:nth-child(4n+2) { background: rgba(226, 240, 203, 0.95); color: #779966; }  
+        .msg-box:nth-child(4n+3) { background: rgba(255, 245, 186, 0.95); color: #D4A373; }  
+        .msg-box:nth-child(4n+4) { background: rgba(255, 255, 255, 0.95); color: #FF8FA3; border: 2px solid #FF8FA3; }  
+
+        /* --- Photo Slideshow Layer (Optimized for Auto-Adapt) --- */
+        .photo-frame {
+            background: white;
+            /* Bottom padding larger for Polaroid caption area */
+            padding: 12px 12px 60px 12px; 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+            
+            /* Auto dimensions constraints - KEY CHANGE HERE */
+            width: auto;
+            height: auto;
+            max-width: 85vw;
+            max-height: 75vh;
+            
+            /* Flexbox to wrap content tightly around image */
+            display: inline-flex; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            
+            position: relative;
+            opacity: 0; /* Transition handles fade in */
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            
+            border-radius: 4px; 
+        }
+        
+        .photo-img {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%; 
+            /* Constrain height so it fits on mobile screens comfortably with the frame padding */
+            max-height: 55vh; 
+            object-fit: contain; 
+            background-color: #fafafa; 
+        }
+
+        .photo-tape {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+            width: 120px; height: 35px;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* Animation for swapping photos with dynamic rotation */
+        .photo-frame.show {
+            animation: photoFloat 6s ease-in-out infinite alternate;
+            opacity: 1;
+        }
+        
+        @keyframes photoFloat {
+            /* Use CSS variable --rot set by JS for base rotation */
+            0% { transform: rotate(var(--rot, -3deg)) scale(1); }
+            100% { transform: rotate(calc(var(--rot, -3deg) + 3deg)) scale(1.02); }
+        }
+
+        /* --- Final Gift Card --- */  
+        .welcome-card {  
+            background: var(--card-bg); width: 90%; max-width: 450px; padding: 40px 30px;  
+            border-radius: 30px; border: 4px dashed var(--primary);  
+            box-shadow: 0 20px 50px rgba(212, 163, 115, 0.2); text-align: center;  
+            /* 默认下沉隐藏 */
+            transform: translateY(60px) scale(0.9); opacity: 0; 
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);   
+        }  
+        .overlay-stage.active .welcome-card { transform: translateY(0) scale(1); opacity: 1; }  
+        /* 离场 */
+        .overlay-stage.exit .welcome-card { transform: scale(0.8) opacity(0); transition: all 0.5s ease; }
+
+        .ribbon { position: absolute; top: -10px; right: -10px; width: 80px; height: 80px; background: var(--secondary); border-radius: 50%; opacity: 0.5; z-index: -1; }  
+        .memory-lane { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; margin-top: 20px;}  
+        .polaroid { background: white; padding: 6px 6px 20px 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transform: rotate(-5deg); width: 90px; border: 1px solid #f0f0f0; }  
+        .polaroid:nth-child(2) { transform: rotate(5deg) translateY(8px); }  
+        .polaroid-img { width: 100%; height: 65px; background-color: #FFD1DC; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }  
+
+        /* --- Final Scene (Completely Redesigned) --- */  
+        #main-scene {  
+            position: relative; z-index: 10; 
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100%; width: 100%;
+            overflow: hidden;
+            transition: opacity 1s ease, filter 1s ease; 
+            filter: blur(10px); opacity: 0; pointer-events: none;
+        }  
+        #main-scene.active { filter: blur(0); opacity: 1; pointer-events: auto; }  
+        
+        /* [NEW] Scene Content Wrapper for auto-scaling */
+        #scene-content-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform-origin: bottom center;
+            pointer-events: none; /* Pass through to children */
+        }
+        #scene-content-layer > * { pointer-events: auto; } /* Enable clicks for children */
+
+        /* Scene Header */
+        .scene-header {
+            position: absolute; top: 10%; width: 100%;
+            animation: floatTitle 4s ease-in-out infinite;
+            z-index: 100; text-align: center;
+        }
+        @keyframes floatTitle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .final-title {
+            font-family: 'Fredoka One', 'Ma Shan Zheng', sans-serif; font-size: 3.2rem; 
+            color: #FF8FA3; 
+            text-shadow: 3px 3px 0px #fff, 0 0 20px rgba(255, 143, 163, 0.4);
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+        .final-subtitle {
+            color: #D4A373; font-weight: bold; font-size: 1.3rem;
+            font-family: 'Ma Shan Zheng';
+            background: rgba(255,255,255,0.6);
+            padding: 6px 24px; border-radius: 20px;
+            display: inline-block;
+            backdrop-filter: blur(2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* --- ROOM DECORATIONS (Background Elements) --- */
+        .room-decor-left {
+            position: absolute; bottom: 80px; left: 5%;
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 5; pointer-events: none;
+        }
+        .room-decor-right {
+            position: absolute; bottom: 80px; right: 5%;
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 5; pointer-events: none;
+        }
+
+        /* Fireplace */
+        .fireplace {
+            width: 120px; height: 100px;
+            background: #8d6e63;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex; justify-content: center; align-items: flex-end;
+            border: 2px solid #5d4037;
+        }
+        .fireplace-inner {
+            width: 70px; height: 60px;
+            background: #3e2723;
+            border-radius: 40px 40px 0 0;
+            position: relative;
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: flex-end;
+        }
+        .fire {
+            font-size: 2rem; position: absolute; bottom: -5px;
+            animation: fireBurn 0.5s infinite alternate;
+            filter: drop-shadow(0 0 10px orange);
+        }
+        @keyframes fireBurn { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 1; } }
+        .mantel {
+            position: absolute; top: -10px; left: -10px;
+            width: 140px; height: 12px;
+            background: #5d4037; border-radius: 4px;
+            box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+        }
+        .stocking {
+            position: absolute; top: 2px; right: 10px;
+            font-size: 1.5rem; transform: rotate(10deg);
+        }
+
+        /* Wall Frames */
+        .wall-frame {
+            width: 80px; height: 100px;
+            background: #fff; border: 4px solid #d4a373;
+            margin-bottom: 40px; /* Space above fireplace */
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: rotate(-2deg);
+        }
+        .wall-frame:nth-child(2) { width: 100px; height: 80px; transform: rotate(2deg); margin-bottom: 20px; }
+
+        /* Bed */
+        .cozy-bed {
+            position: relative;
+            width: 160px; height: 100px;
+        }
+        .bed-frame {
+            position: absolute; bottom: 0; width: 100%; height: 40px;
+            background: #fff0f5; border-radius: 8px;
+            border: 2px solid #ff8fa3;
+            box-shadow: 0 4px 5px rgba(0,0,0,0.1);
+        }
+        .bed-head {
+            position: absolute; bottom: 40px; right: 0;
+            width: 20px; height: 50px;
+            background: #ff8fa3; border-radius: 4px;
+        }
+        .bed-blanket {
+            position: absolute; bottom: 0; left: 0;
+            width: 110px; height: 45px;
+            background: #b5ead7;
+            border-radius: 8px 0 0 8px;
+        }
+        .pillow {
+            position: absolute; bottom: 45px; right: 25px;
+            font-size: 1.8rem; transform: rotate(-5deg);
+        }
+        .cat-sleep {
+            position: absolute; bottom: 35px; left: 30px;
+            font-size: 1.8rem; z-index: 2;
+        }
+
+        /* Window */
+        .wall-window {
+            width: 100px; height: 100px;
+            background: #2c3e50;
+            border: 6px solid #fff;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+        .wall-window::before {
+            content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 4px;
+            background: #fff; transform: translateY(-50%);
+        }
+        .wall-window::after {
+            content: ''; position: absolute; left: 50%; top: 0; height: 100%; width: 4px;
+            background: #fff; transform: translateX(-50%);
+        }
+        .moon-view {
+            position: absolute; top: 10px; right: 10px; font-size: 1.2rem;
+        }
+
+        /* Floor Rug */
+        .rug {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 500px; height: 120px;
+            background: radial-gradient(ellipse at center, #d7ccc8, transparent 70%);
+            border-radius: 50%;
+            z-index: 4; /* Behind tree(10) and decor(5) */
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .room-decor-left { left: -30px; transform: scale(0.7); transform-origin: bottom left; }
+            .room-decor-right { right: -30px; transform: scale(0.7); transform-origin: bottom right; }
+            .wall-frame { display: none; } /* Simplify for mobile */
+            .wall-window { margin-bottom: 10px; width: 80px; height: 80px; }
+            .rug { width: 350px; }
+        }
+
+        /* --- GIANT TREE & 3D ORBIT SYSTEM --- */
+        
+        /* The Central Stage */
+        .center-stage {
+            position: absolute; bottom: 100px; /* Lifted from 60px for mobile thumb access */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px; height: 500px;
+            display: flex; justify-content: center; align-items: flex-end;
+            pointer-events: none; /* Container passes clicks */
+        }
+        @media (max-height: 700px) {
+            .center-stage { bottom: 80px; }
+        }
+
+        /* The Giant Tree */
+        .giant-tree {
+            font-size: 22rem; line-height: 1;
+            filter: drop-shadow(0 10px 20px rgba(0,50,0,0.3));
+            position: relative; z-index: 10; /* Middle Layer */
+            transform-origin: bottom center;
+            animation: treeBreath 4s ease-in-out infinite alternate;
+            pointer-events: none; /* [FIX] Allow clicks to pass through transparent parts of emoji */
+        }
+        @keyframes treeBreath { 0% { transform: scale(1); } 100% { transform: scale(1.02); } }
+
+        /* The Star on top (Axis of Rotation) */
+        .tree-star {
+            position: absolute; top: 40px; left: 50%; 
+            transform: translateX(-50%);
+            font-size: 4rem; z-index: 11;
+            filter: drop-shadow(0 0 15px gold);
+            animation: starTwinkle 1.5s infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes starTwinkle { 0% { opacity: 0.8; transform: translateX(-50%) scale(1); } 100% { opacity: 1; transform: translateX(-50%) scale(1.2); } }
+
+        /* --- 3D ORBIT BALLOON --- */
+        .orbit-container {
+            position: absolute; 
+            top: 80px; /* Align with star roughly */
+            left: 50%;
+            width: 0; height: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .balloon-wrapper {
+            position: absolute; top: -90px; left: -60px;
+            width: 120px; height: 180px;
+            cursor: pointer;
+            pointer-events: auto; /* [FIX] Re-enable clicks */
+            will-change: transform, z-index;
+            animation: orbit3D 20s linear infinite;
+        }
+        /* Pause on hover */
+        .balloon-wrapper:hover { animation-play-state: paused; }
+
+        /* 
+           Perspective Logic:
+           0%   : Front (z: 20), Scaled Up, Lower Y
+           25%  : Right (z: 10), Normal Scale, Higher Y
+           50%  : Back (z: 5), Scaled Down, Highest Y (Behind Tree Tip)
+           75%  : Left (z: 10), Normal Scale, Higher Y
+           100% : Front
+        */
+        @keyframes orbit3D {
+            0% { 
+                z-index: 20; 
+                transform: translateX(0px) translateY(20px) scale(1.2); 
+            }
+            25% { 
+                z-index: 9; 
+                transform: translateX(160px) translateY(-10px) scale(0.9); 
+            }
+            50% { 
+                z-index: 5; /* Behind Tree (Tree is 10) */
+                transform: translateX(0px) translateY(-30px) scale(0.7); 
+            }
+            75% { 
+                z-index: 9; 
+                transform: translateX(-160px) translateY(-10px) scale(0.9); 
+            }
+            100% { 
+                z-index: 20; 
+                transform: translateX(0px) translateY(20px) scale(1.2); 
+            }
+        }
+        
+        @media (max-width: 450px) {
+            @keyframes orbit3D {
+                0% { z-index: 20; transform: translateX(0px) translateY(20px) scale(1.1); }
+                25% { z-index: 9; transform: translateX(110px) translateY(-10px) scale(0.85); }
+                50% { z-index: 5; transform: translateX(0px) translateY(-30px) scale(0.65); }
+                75% { z-index: 9; transform: translateX(-110px) translateY(-10px) scale(0.85); }
+                100% { z-index: 20; transform: translateX(0px) translateY(20px) scale(1.1); }
+            }
+            .giant-tree { font-size: 18rem; }
+            .center-stage { bottom: 110px; }
+        }
+
+        /* Balloon Graphics (Same as before) */
+        .hot-air-balloon {
+            position: relative; display: flex; flex-direction: column; align-items: center;
+            transition: transform 0.3s;
+        }
+        .hot-air-balloon.anim-shake { animation: shakeBalloon 0.5s ease-in-out; }
+
+        .balloon-body {
+            width: 100px; height: 120px;
+            background: radial-gradient(circle at 30% 30%, #fff, var(--primary));
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: relative; overflow: hidden;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), 5px 10px 20px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        .balloon-body::before {
+            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 16px; height: 100%; background: var(--secondary); opacity: 0.6;
+            border-radius: 50%;
+        }
+        .balloon-body::after {
+            content: ''; position: absolute; top: 40%; left: 0; width: 100%; height: 12px;
+            background: var(--accent); opacity: 0.8; transform: rotate(-5deg);
+        }
+        .balloon-ropes {
+            width: 30px; height: 15px; 
+            border-left: 2px solid #8d6e63; border-right: 2px solid #8d6e63;
+            margin-top: -4px; position: relative; z-index: 1;
+        }
+        .balloon-basket {
+            width: 36px; height: 28px; background: #8d6e63;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; position: relative; z-index: 2;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+            background-image: linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1) 75%, transparent 75%, transparent);
+            background-size: 8px 8px;
+        }
+        /* [FIX] Larger hit area for secret trigger */
+        .balloon-basket::before {
+            content: ''; position: absolute;
+            top: -30px; left: -30px; right: -30px; bottom: -30px;
+            z-index: 10;
+        }
+        .balloon-basket:active { transform: scale(0.9); }
+        .balloon-basket::after {
+            content: '🎁'; position: absolute; top: -8px; font-size: 1.1rem;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+        }
+
+        @keyframes shakeBalloon {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        /* Falling Stars */
+        .falling-star {
+            position: fixed; 
+            color: #FFD700; font-size: 1.2rem;
+            pointer-events: none; z-index: 30; /* Must fall in front */
+            animation: starDrop 1.5s linear forwards;
+            text-shadow: 0 0 5px #fff;
+        }
+        @keyframes starDrop {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(150px) rotate(180deg) scale(0.5); opacity: 0; }
+        }
+
+        /* --- DOLLS AT THE BASE --- */
+        .dolls-wrapper {
+            position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: flex-end; justify-content: center;
+            z-index: 20; /* Front of tree */
+            width: 100%; max-width: 500px;
+            pointer-events: none; /* Wrapper passes clicks */
+        }
+        
+        .doll-item {
+            position: relative;
+            font-size: 3.5rem;
+            margin: 0 -5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+            user-select: none;
+            pointer-events: auto; /* [FIX] Enable clicks on items */
+        }
+        /* [FIX] Large hit area for dolls */
+        .doll-item::before {
+            content: ''; position: absolute;
+            top: -20px; left: -10px; right: -10px; bottom: -10px;
+            z-index: 1;
+        }
+        
+        /* Arc effect via margins and translateY */
+        .doll-item:nth-child(1) { transform: translateY(-10px) rotate(-10deg); margin-right: 10px; }
+        .doll-item:nth-child(2) { transform: translateY(-5px) rotate(-5deg); margin-right: 5px; }
+        .doll-item:nth-child(3) { transform: translateY(0) scale(1.1); z-index: 21; }
+        .doll-item:nth-child(4) { transform: translateY(-5px) rotate(5deg); margin-left: 5px; }
+        .doll-item:nth-child(5) { transform: translateY(-10px) rotate(10deg); margin-left: 10px; }
+
+        .doll-item:active { transform: scale(0.9) !important; }
+        .doll-item:hover { filter: drop-shadow(0 8px 10px rgba(0,0,0,0.3)) brightness(1.1); }
+        
+        .doll-jump { animation: dollJump 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes dollJump { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+
+        /* Pop-up Bubble (Shared) */
+        .pop-bubble {
+            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            background: #fff; padding: 6px 12px; border-radius: 12px;
+            font-size: 0.9rem; color: #FF8FA3; font-weight: bold;
+            white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            opacity: 0; pointer-events: none; font-family: 'Fredoka One', 'Ma Shan Zheng';
+            z-index: 100; transition: none;
+        }
+        .pop-bubble.show { animation: popShow 3s forwards; }
+        @keyframes popShow { 
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); } 
+            10% { opacity: 1; transform: translate(-50%, 0) scale(1); } 
+            80% { opacity: 1; transform: translate(-50%, -15px); }
+            100% { opacity: 0; transform: translate(-50%, -40px); } 
+        }
+        .pop-bubble::after {
+            content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px;
+            border-width: 6px 6px 0; border-style: solid; border-color: #fff transparent transparent transparent;
+        }
+
+        /* Flying Sleigh (Still in bg) */
+        .sleigh-container {
+            position: absolute; top: 12%; left: -300px;
+            font-size: 2rem; opacity: 0.8; pointer-events: none; z-index: 1;
+        }
+        .sleigh-container.fly { animation: sleighRide 12s linear forwards; }
+        @keyframes sleighRide {
+            0% { transform: translateX(0) translateY(0) rotate(5deg); left: -300px; }
+            25% { transform: translateX(25vw) translateY(20px) rotate(0deg); }
+            50% { transform: translateX(50vw) translateY(0) rotate(-5deg); }
+            75% { transform: translateX(75vw) translateY(20px) rotate(0deg); }
+            100% { transform: translateX(100vw) translateY(0) rotate(5deg); left: 100vw; }
+        }
+
+        .snow-ground { position: fixed; bottom: -40px; left: 0; width: 100%; height: 120px; background: white; border-radius: 50% 50% 0 0 / 100% 100% 0 0; transform: scaleX(1.5); z-index: 2; transition: transform 1s ease; }  
+        
+        @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(105vh) rotate(360deg); opacity: 0; } }  
+        .snowflake { position: absolute; background: white; border-radius: 50%; opacity: 0.8; pointer-events: none; } 
+        
+        /* 闪光转场优化 */
+        #flash-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: white; z-index: 9999; pointer-events: none; 
+            opacity: 0; transition: opacity 1.5s ease-in-out; 
+        }
+
+        /* =========================================
+           THEME ANIMATIONS (Unique for each memory)
+           ========================================= */
+        /* Theme 1: Sakura (初识) */
+        .fx-sakura { position: absolute; font-size: 1.5rem; animation: sakuraFall linear infinite; opacity: 0.8; }
+        @keyframes sakuraFall { 0% { transform: translateY(-10vh) rotate(0deg) translateX(0); } 100% { transform: translateY(110vh) rotate(360deg) translateX(20px); } }
+
+        /* Theme 2: Paper Plane (分享) */
+        .fx-plane { position: absolute; font-size: 2.5rem; animation: planeFly linear infinite; opacity: 0.9; }
+        @keyframes planeFly { 
+            0% { transform: translate(-20vw, 10vh) rotate(10deg) scale(0.5); opacity: 0; } 
+            20% { opacity: 1; }
+            100% { transform: translate(120vw, -30vh) rotate(-10deg) scale(1); opacity: 1; } 
+        }
+
+        /* Theme 3: Gaming (游戏) */
+        .fx-game-icon { position: absolute; font-size: 3rem; animation: gamePop infinite alternate; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+        .fx-game-vs { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 15rem; font-weight: 900; color: rgba(255,255,255,0.05); font-family: 'Fredoka One'; animation: pulseVs 2s infinite; }
+        @keyframes gamePop { 0% { transform: scale(1) rotate(-5deg); } 100% { transform: scale(1.1) rotate(5deg); } }
+        @keyframes pulseVs { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.05); } }
+
+        /* Theme 4: Warmth (支撑) */
+        .fx-warm-glow { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(255, 165, 0, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+            border-radius: 50%; animation: warmPulse 4s infinite ease-in-out;
+        }
+        @keyframes warmPulse { 0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); } }
+
+        /* Theme 5: Laughter (欢笑) */
+        .fx-laugh { position: absolute; font-size: 2.5rem; animation: floatBubble linear infinite; }
+        @keyframes floatBubble { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
+
+        /* Theme 6: Winter (过冬) */
+        .fx-frost { position: absolute; inset: 0; box-shadow: inset 0 0 100px rgba(200, 230, 255, 0.8); pointer-events: none; z-index: 10; }
+
+        /* Theme 7: Stars (许愿) */
+        .fx-star { position: absolute; background: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
+        .fx-shooting-star { 
+            position: absolute; width: 100px; height: 2px; background: linear-gradient(90deg, white, transparent);
+            transform: rotate(-45deg); animation: shootStar 3s linear infinite; opacity: 0;
+        }
+        @keyframes twinkle { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+        @keyframes shootStar { 0% { transform: translate(0, 0) rotate(-45deg); opacity: 1; } 20% { opacity: 1; } 100% { transform: translate(-50vw, 50vh) rotate(-45deg); opacity: 0; } }
+
+        /* Theme 8: Balloons (陪伴) */
+        .fx-balloon { position: absolute; font-size: 3rem; animation: balloonRise linear infinite; }
+        @keyframes balloonRise { 0% { transform: translateY(110vh) translateX(0); } 50% { transform: translateY(50vh) translateX(20px); } 100% { transform: translateY(-20vh) translateX(-20px); } }
+
+        /* Theme 9: Golden (祝福) */
+        .fx-gold { position: absolute; width: 6px; height: 6px; background: #FFD700; border-radius: 50%; animation: goldRain linear infinite; box-shadow: 0 0 5px #FFD700; }
+        @keyframes goldRain { 0% { transform: translateY(-10px); opacity: 1; } 100% { transform: translateY(110vh); opacity: 0; } }
+
+    </style>  
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>  
+<body>  
+    
+    <!-- [NEW] Subtle Debug Info (Top Left, Low Opacity) -->
+    <div id="res-debug" style="position:fixed; top:4px; left:4px; font-size:10px; opacity:0.2; color:#000; z-index:10001; pointer-events:none; font-family:sans-serif;">Init...</div>
+
+    <!-- 倒计时层 (Lock Screen) -->
+    <!-- Priority 1: Max Z-Index and Inline Display Force -->
+    <div id="countdown-layer">
+        <div class="lock-icon" id="lock-btn">🔒</div>
+        <div class="countdown-title">礼物派送中...</div>
+        <div class="countdown-timer">
+            <div class="timer-part"><span class="timer-val" id="cd-d">00</span><span class="timer-label">DAYS</span></div>
+            <div class="timer-sep">:</div>
+            <div class="timer-part"><span class="timer-val" id="cd-h">00</span><span class="timer-label">HRS</span></div>
+            <div class="timer-sep">:</div>
+            <div class="timer-part"><span class="timer-val" id="cd-m">00</span><span class="timer-label">MIN</span></div>
+            <div class="timer-sep">:</div>
+            <div class="timer-part"><span class="timer-val" id="cd-s">00</span><span class="timer-label">SEC</span></div>
+        </div>
+        <div class="countdown-tips">
+            现在还不能偷看哦<br>请耐心等待北京时间 12月25日 00:00
+        </div>
+    </div>
+
+    <!-- 密码验证弹窗 (Bypass Modal) -->
+    <div id="bypass-modal">
+        <div class="bypass-box">
+            <h3 style="color: #8d6e63; font-family: 'Ma Shan Zheng'; margin-bottom: 10px;">🔒 秘密通道</h3>
+            <div style="font-size: 0.9rem; color: #bbb; margin-bottom: 15px;">请输入暗号开启回忆</div>
+            <input type="tel" id="bypass-input" class="bypass-input" maxlength="4" placeholder="****">
+            <div class="bypass-btns">
+                <button class="bypass-btn btn-cancel" onclick="closeBypass()">取消</button>
+                <button class="bypass-btn btn-confirm" onclick="checkBypass()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 资源加载页 (Optimized) -->
+    <div id="loading-screen">
+        <div class="loading-icon">🎁</div>
+        <div class="loading-bar-container">
+            <div class="loading-bar" id="loading-bar"></div>
+        </div>
+        <div class="loading-text">正在打包美好的回忆...</div>
+    </div>
+
+    <!-- 顶部彩灯装饰 -->
+    <div class="light-rope">
+        <div class="light-wire"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+        <div class="light-bulb"></div>
+    </div>
+
+    <!-- 0. 基础渐变背景 -->
+    <div id="bg-base-layer"></div>
+
+    <!-- 1. 主题特效层 (回忆时动态变化) -->
+    <div id="theme-layer"></div>
+
+    <!-- 2. 全局雪花层 -->
+    <div id="snow-container"></div>  
+
+    <!-- 闪光转场层 -->
+    <div id="flash-overlay"></div>
+
+    <!-- 背景音乐 (预加载) -->
+    <audio id="bgm" loop preload="auto">
+        <!-- 替换为国内可访问的网易云音乐直链 -->
+        <source src="https://music.163.com/song/media/outer/url?id=478507889.mp3" type="audio/mpeg">
+    </audio>
+    <div id="music-control" onclick="toggleMusic(event)">🎵</div>
+  
+    <!-- 序章 -->  
+    <div id="stage-0-intro" class="overlay-stage">  
+        <div class="dialog-box">  
+            <div class="dialog-pin"></div>  
+            <h3 style="color: #D4A373; font-size: 1.5rem; font-family: 'Fredoka One'; margin-bottom: 10px;">  
+                To: 最可爱的小胡同学 📝  
+            </h3>  
+            <div class="dialog-content" id="intro-text"></div>  
+            <button class="action-btn disabled" id="btn-intro" onclick="startMemories()">开启回忆 &gt;</button>  
+        </div>  
+    </div>  
+  
+    <!-- 回忆播放器 -->  
+    <div id="stage-1-memory" class="overlay-stage">  
+        <div class="dialog-box">  
+            <div class="dialog-pin"></div>  
+            <h3 id="mem-title" style="color: #D4A373; font-size: 1.4rem; font-family: 'Fredoka One';"></h3>  
+            <div class="dialog-content typing-cursor" id="mem-text"></div>  
+            <button class="action-btn disabled" id="btn-mem" onclick="nextMemory()">下一步 &gt;</button>  
+        </div>
+    </div>  
+  
+    <!-- 游戏引导 -->  
+    <div id="stage-2-invite" class="overlay-stage">  
+        <div class="dialog-box">  
+            <div class="dialog-pin"></div>  
+            <h3 style="color: #D4A373; font-size: 1.5rem; font-family: 'Fredoka One'; margin-bottom: 10px;">  
+                To: 最可爱的小胡同学 📝  
+            </h3>  
+            <div class="dialog-content" id="invite-text"></div>  
+            <!-- 全自动模式，隐藏按钮 -->
+            <button class="action-btn disabled" id="btn-invite" style="display:none;">  
+                接收祝福 ✨  
+            </button>  
+        </div>  
+    </div>  
+  
+    <!-- 爱心动画层 -->  
+    <div id="game-layer"></div>  
+  
+    <!-- Memory Photo Slideshow -->
+    <div id="stage-photo-gallery" class="overlay-stage">
+        <div class="photo-frame" id="photo-frame">
+            <div class="photo-tape"></div>
+            <img id="photo-display" class="photo-img" src="" alt="Memory" />
+        </div>
+    </div>
+
+    <!-- 礼物卡片 -->  
+    <div id="stage-3-card" class="overlay-stage">  
+        <div class="welcome-card">  
+            <div class="ribbon"></div>  
+            <h2 class="card-title">To: 亲爱的你 ✨</h2>  
+            <p class="card-text" style="font-size: 1.2rem;">  
+                集齐啦！<br>每一个方块都是我的心意。<br>圣诞快乐！  
+            </p>  
+            <div class="memory-lane">  
+                <div class="polaroid"><div class="polaroid-img">🍬</div></div>  
+                <div class="polaroid"><div class="polaroid-img">🌟</div></div>  
+            </div>  
+            <button class="action-btn" style="float:none;" onclick="revealFinal()">拆开礼物 🎁</button>  
+        </div>  
+    </div> 
+    
+    <!-- Secret Code Modal (Hidden by default) -->
+    <div id="secret-modal" class="overlay-stage" style="z-index: 2000;">
+        <div class="dialog-box" style="text-align: center;">
+            <div class="dialog-pin"></div>
+            <h3 style="color: #FF8FA3; font-family: 'Fredoka One'; font-size: 1.5rem;">🎉 恭喜发现隐藏彩蛋！</h3>
+            <div class="dialog-content" style="font-size: 1.4rem; color: #5d4037; min-height: auto;">
+                竟然被你找到了！<br>
+                我们的暗语是：<br>
+                <span style="font-size: 2rem; color: #FF8FA3; font-weight: bold; display: block; margin: 15px 0; font-family: 'Fredoka One';">11050830</span>
+                快来找我兑换礼物吧 🤩
+            </div>
+            <button class="action-btn" style="float:none;" onclick="closeSecret()">收到 🎁</button>
+        </div>
+    </div>
+  
+    <!-- 最终场景 (Redesigned with Cozy Decor) -->  
+    <div id="main-scene">  
+        <div class="scene-header">
+            <h1 class="final-title">Merry Christmas! 小胡同学</h1>  
+            <div class="final-subtitle">属于你的可爱冬天 ✨</div>
+        </div>
+        
+        <!-- Scene Content Wrapper for auto-scaling -->
+        <div id="scene-content-layer">
+            <!-- Flying Sleigh (Background) -->
+            <div class="sleigh-container" id="sleigh">🎅🦌💨</div>
+
+            <!-- Left Decor -->
+            <div class="room-decor-left">
+                <div class="wall-frame">🖼️</div>
+                <div class="fireplace">
+                    <div class="mantel"><div class="stocking">🧦</div></div>
+                    <div class="fireplace-inner">
+                        <div class="fire">🔥</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Decor -->
+            <div class="room-decor-right">
+                <div class="wall-window">
+                    <div class="moon-view">🌙</div>
+                </div>
+                <div class="cozy-bed">
+                    <div class="bed-head"></div>
+                    <div class="bed-frame"></div>
+                    <div class="bed-blanket"></div>
+                    <div class="pillow">☁️</div>
+                    <div class="cat-sleep">🐈</div>
+                </div>
+            </div>
+
+            <!-- Center Rug -->
+            <div class="rug"></div>
+
+            <!-- The Center Stage -->
+            <div class="center-stage">
+                <!-- The Star Axis -->
+                <div class="tree-star">⭐</div>
+                
+                <!-- Giant Tree -->
+                <div class="giant-tree">🎄</div>
+
+                <!-- Orbiting Balloon System -->
+                <div class="orbit-container">
+                    <div class="balloon-wrapper" onclick="handleBalloonClick(event, this)">
+                        <div class="pop-bubble">梦幻热气球</div>
+                        <div class="hot-air-balloon">
+                            <div class="balloon-body"></div>
+                            <div class="balloon-ropes"></div>
+                            <div class="balloon-basket"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dolls at the base -->
+                <div class="dolls-wrapper">
+                    <div class="doll-item" onclick="interactDoll(this, '姜饼人')">
+                        <div class="pop-bubble">要吃饼干吗?</div>🍪
+                    </div>
+                    <div class="doll-item" onclick="interactDoll(this, '小熊')">
+                        <div class="pop-bubble">抱抱~</div>🧸
+                    </div>
+                    <div class="doll-item" onclick="interactDoll(this, '圣诞老人')">
+                        <div class="pop-bubble">Ho Ho Ho!</div>🎅
+                    </div>
+                    <div class="doll-item" onclick="interactDoll(this, '雪人')">
+                        <div class="pop-bubble">好凉快呀</div>⛄
+                    </div>
+                    <div class="doll-item" onclick="interactDoll(this, '驯鹿')">
+                        <div class="pop-bubble">圣诞快乐!</div>🦌
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>  
+    <div class="snow-ground"></div>  
+  
+    <script>  
+        // ================= 数据配置 =================  
+        
+        // [UPDATED] 使用 Gitee 直链 (需配合 meta no-referrer 使用)
+        const PHOTO_MEMORIES = [
+            "https://gitee.com/konatatata/material/raw/master/e74e3566a563c744640a12eac2a8ec7f.png",
+            "https://gitee.com/konatatata/material/raw/master/cd2319e76c903b0304e99337459f69b2.png",
+            "https://gitee.com/konatatata/material/raw/master/ca3e6bb9323f7264aadaa546fcc2f78a.png",
+            "https://gitee.com/konatatata/material/raw/master/bfbe9a1ea6b05d767dc8638d8d6e6d5b.png",
+            "https://gitee.com/konatatata/material/raw/master/ba6fb3bc26dff7f50583799adc031631.png",
+            "https://gitee.com/konatatata/material/raw/master/4e8633b4303b506c640aad08a823b80d.png",
+            "https://gitee.com/konatatata/material/raw/master/4c25d1c56fb6738b06ddba8ad941171e.png",
+            "https://gitee.com/konatatata/material/raw/master/43d9364bcbbd63e09b7e0d780cf484b4.png",
+            "https://gitee.com/konatatata/material/raw/master/3abddf62b53ddde2fdfa4aa20a010ab5.png",
+            "https://gitee.com/konatatata/material/raw/master/1379315fd98cbb7084ae18c5c4eed204.png"
+        ];
+
+        const INTRO_TEXT = "这是我们认识后我陪你度过的第一个圣诞节\n谨以此纪念我们的友谊\n在这个寒冷的冬天，希望可以为你带来一丝温暖";
+        const INVITE_TEXT = "Hello，圣诞快乐！\n这里有一份特别的礼物送给你。\n准备好了吗？";
+
+        const MESSAGES = [  
+            "🍎平安", "💰暴富", "🍀好运", "❤️Love",   
+            "✨闪耀", "🎄Xmas", "🎁礼物", "💪加油",   
+            "🍬甜蜜", "🐱可爱", "🌈美好", "🚀上岸",   
+            "🎉欢庆", "❄️纯洁", "🌟希望", "🏖️自由",   
+            "😄开心", "🐟锦鲤", "🏠温馨", "👭友谊",  
+            "🍰幸福", "🌙晚安", "🧸陪伴", "🎶快乐"  
+        ];  
+
+        const MEMORIES = [
+            { t: "(1/9) 🌱", c: "还记得我们刚认识的时候吗？\n那时虽然有些拘谨，\n但每一次对话都让我觉得特别投缘。\n像是春风吹进了心里。", theme: 'sakura' },
+            { t: "(2/9) 📱", c: "后来我们越来越熟悉，\n开始分享彼此的喜怒哀乐，\n哪怕是生活里的芝麻小事，\n也总想第一时间告诉你。", theme: 'planes' },
+            { t: "(3/9) 🎮", c: "最开心的就是和你一起打游戏！\n不管是王者荣耀还是和平精英...\n每一次组队开黑，\n都是我们专属的快乐时光！", theme: 'gaming' },
+            { t: "(4/9) 💪", c: "当然也有一起emo的时候，\n互相吐槽生活的不易、工作的烦恼。\n但只要互相打打气，\n好像就又有了继续升级打怪的动力。", theme: 'warmth' },
+            { t: "(5/9) 😂", c: "谢谢你总是能接住我的奇奇怪怪，\n那些只有我们懂的梗，\n每次想起来都会忍不住嘴角上扬。\n和你聊天真的超级轻松快乐。", theme: 'laugh' },
+            { t: "(6/9) ❄️", c: "不知不觉，\n又一起走过了一个春夏秋冬，\n迎来了这个浪漫的圣诞节。\n因为有你，这个冬天好像也没那么冷了。", theme: 'winter' },
+            { t: "(7/9) ✨", c: "圣诞节到了，\n想把星星摘下来送给你，\n想把世界上最美好的祝福都给你。\n希望你每天都能遇见属于你的小确幸。", theme: 'stars' },
+            { t: "(8/9) 🎈", c: "谢谢你出现在我的生命里，\n成为我特别的朋友。\n希望在未来的日子里，\n我们可以继续一起大笑，一起可可爱爱。", theme: 'balloons' },
+            { t: "(9/9) 🎄", c: "最后，\n亲爱的小胡同学，\n愿你永远被爱包围，万事胜意！\n圣诞快乐，不止圣诞，每天都快乐！", theme: 'gold' }
+        ];
+
+        // 99条不重复的祝福语
+        const BALLOON_MESSAGES = [
+            "圣诞快乐，天天开心！", "友谊长存，岁岁年年！", "你是最可爱的！", "愿你温暖过冬！", "好运正在派送中...",
+            "暴富暴富暴富！", "想吃火锅了吗？", "记得多喝热水哦~", "永远做自己！", "前程似锦，未来可期！",
+            "所有的美好如期而至。", "你是最棒的！", "别熬夜啦，变秃头！", "快乐不止圣诞节！", "愿你被世界温柔以待。",
+            "心想事成！", "万事胜意！", "平安喜乐！", "保持热爱，奔赴山海。", "笑口常开！",
+            "遇见的都是天意。", "拥有的都是幸运。", "愿你眼里有光。", "愿你心中有爱。", "好心情每一天！",
+            "你是我的宝藏朋友。", "要一直快乐下去哦。", "烦恼通通走开！", "水逆退散！", "锦鲤附体！",
+            "吃不胖！", "睡得香！", "数钱数到手抽筋！", "出门见喜！", "抬头见财！",
+            "生活明朗，万物可爱。", "因为有你，冬天很暖。", "谢谢你的陪伴。", "未来我们一起走。", "苟富贵，勿相忘！",
+            "游戏把把C！", "排位连胜！", "落地有枪！", "把把吃鸡！", "不仅可爱，还很有才！",
+            "魅力无限！", "人见人爱，花见花开。", "你是电，你是光！", "你是唯一的High咖。", "快乐星球居民。",
+            "愿你拥有超能力。", "百毒不侵。", "诸邪退散。", "欧气满满！", "元气满满！",
+            "做个快乐的小吃货。", "奶茶自由！", "火锅自由！", "烤肉自由！", "甜点自由！",
+            "每天都被爱包围。", "收到好多好多礼物。", "袜子装不下礼物啦。", "麋鹿迷路了，礼物还在路上。", "圣诞老人最喜欢你。",
+            "雪花是冬天的来信。", "你是我的独家记忆。", "友谊的小船永不翻。", "干杯🍻", "Cheer up!",
+            "Be happy!", "Good luck!", "Merry Christmas!", "Happy New Year!", "Nice to meet you!",
+            "愿梦里有星辰。", "醒来有阳光。", "嘴角上扬15度。", "今天也是元气满满的一天！", "冲鸭！",
+            "加油，小胡同学！", "没有什么可以打倒你。", "相信自己。", "你值得最好的一切。", "拥抱未来。",
+            "不负韶华。", "只争朝夕。", "快乐至上。", "知足常乐。", "顺其自然。",
+            "随遇而安。", "心之所向。", "素履以往。", "可可爱爱。", "奇奇怪怪。",
+            "没有文案，只有祝福。", "最后一条：永远快乐！", "特别的爱给特别的你。", "愿你三冬暖。", "愿你春不寒。",
+            "愿你天黑有灯。", "愿你下雨有伞。", "愿你路上有良人相伴。", "圣诞节快乐呀！"
+        ];
+        let availableBalloonMsgs = [...BALLOON_MESSAGES];
+  
+        // ================= 系统变量 =================  
+        const bgm = document.getElementById('bgm');
+        const musicBtn = document.getElementById('music-control');
+        let currentMemIndex = 0;
+        window.isUnlocked = false; // [NEW] Global unlock flag
+        
+        // ================= 核心逻辑：初始化与锁定 =================  
+        
+        // [Step 1] 唯一入口：DOM Ready 立即检查
+        document.addEventListener('DOMContentLoaded', () => {
+            initResponsive();
+            
+            // 立即执行时间检查 - 这是最高优先级
+            initSystemLock();
+            
+            // 绑定开发者后门 (Updated: Trigger Password Modal on 1st Click)
+            const lockBtn = document.getElementById('lock-btn');
+            if(lockBtn) {
+                lockBtn.addEventListener('click', () => {
+                   // Show Password Modal immediately
+                   document.getElementById('bypass-modal').style.display = 'flex';
+                   setTimeout(() => document.getElementById('bypass-input').focus(), 100);
+                });
+            }
+        });
+        
+        // Bypass Logic Functions
+        function closeBypass() {
+            document.getElementById('bypass-modal').style.display = 'none';
+            document.getElementById('bypass-input').value = '';
+        }
+
+        function checkBypass() {
+            const input = document.getElementById('bypass-input');
+            if(input.value === '0803') {
+                closeBypass();
+                // Start Unlock
+                unlockAndStart();
+            } else {
+                alert('暗号不对哦 😝');
+                input.value = '';
+            }
+        }
+
+        // 检查时间并决定去留
+        function initSystemLock() {
+            const now = new Date();
+            const currentYear = now.getUTCFullYear(); 
+
+            // Beijing is UTC+8.
+            // Target is Dec 25 00:00 Beijing Time.
+            // In UTC, this is Dec 24 16:00 of the SAME year (prev day).
+            
+            // 1. Define the target for THIS year
+            let targetDate = Date.UTC(currentYear, 11, 24, 16, 0, 0);
+
+            // 2. Define the "End of Christmas Day" for THIS year (Dec 26 00:00 Beijing)
+            let endDate = Date.UTC(currentYear, 11, 25, 16, 0, 0);
+
+            const currentTs = now.getTime();
+
+            // Logic:
+            // If now is between Start and End -> UNLOCK (It is Christmas!)
+            // If now is AFTER End -> Target is NEXT YEAR
+            // If now is BEFORE Start -> Target is THIS YEAR (already set)
+
+            if (currentTs >= targetDate && currentTs < endDate) {
+                // It is Christmas Day! Unlock immediately.
+                unlockAndStart();
+                return;
+            }
+
+            if (currentTs >= endDate) {
+                // We missed it this year, set target to next year
+                targetDate = Date.UTC(currentYear + 1, 11, 24, 16, 0, 0);
+            }
+
+            // Start monitoring/countdown
+            startCountdown(targetDate);
+        }
+
+        // 倒计时循环
+        function startCountdown(targetTs) {
+            const layer = document.getElementById('countdown-layer');
+            const elD = document.getElementById('cd-d');
+            const elH = document.getElementById('cd-h');
+            const elM = document.getElementById('cd-m');
+            const elS = document.getElementById('cd-s');
+            
+            // Function to calculate and update UI
+            function update() {
+                if (window.isUnlocked) return; // [NEW] Stop updating if unlocked
+
+                const now = new Date().getTime();
+                const diff = targetTs - now;
+
+                if (diff <= 0) {
+                    // Time Reached during wait
+                    clearInterval(timer);
+                    unlockAndStart(); 
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                if(elD) elD.innerText = String(days).padStart(2, '0');
+                if(elH) elH.innerText = String(hours).padStart(2, '0');
+                if(elM) elM.innerText = String(minutes).padStart(2, '0');
+                if(elS) elS.innerText = String(seconds).padStart(2, '0');
+            }
+
+            // Run ONCE immediately to prevent 00:00 flash
+            update();
+            
+            // Start interval
+            const timer = setInterval(update, 1000);
+        }
+
+        // [Step 2] 解锁并启动应用 (Entry Point for App Logic)
+        // 只有这个函数被调用，后续的音乐、雪花、加载条才会出现
+        function unlockAndStart() {
+            // [NEW] Global Flag to stop countdown logic
+            window.isUnlocked = true;
+
+            const layer = document.getElementById('countdown-layer');
+            if(layer) {
+                layer.style.pointerEvents = 'none'; // [FIX] Stop blocking clicks immediately
+                layer.style.opacity = '0';
+                // Wait for fade out then destroy it
+                setTimeout(() => {
+                    // FORCE HIDE with priority to fix blocking issue
+                    layer.style.setProperty('display', 'none', 'important'); 
+                    startLoadingSequence(); // Start App
+                    initEnvironmentEffects(); // Start Snow/Music
+                }, 800);
+            } else {
+                // Fallback if layer missing
+                startLoadingSequence();
+                initEnvironmentEffects();
+            }
+        }
+
+        // 初始化环境特效 (雪花 + 音乐)
+        function initEnvironmentEffects() {
+            // Start Snow
+            setInterval(createSnow, 200);
+            
+            // Start Music (Attempt Autoplay)
+            const attemptPlay = () => {
+                bgm.play().then(() => {
+                    musicBtn.classList.add('playing'); musicBtn.innerText = '🎵';
+                }).catch(() => {
+                    // Interaction fallback
+                    const unlockAudio = () => {
+                        bgm.play(); musicBtn.classList.add('playing'); musicBtn.innerText = '🎵';
+                        document.removeEventListener('click', unlockAudio);
+                        document.removeEventListener('touchstart', unlockAudio);
+                    };
+                    document.addEventListener('click', unlockAudio);
+                    document.addEventListener('touchstart', unlockAudio);
+                });
+            };
+            attemptPlay();
+        }
+
+        // 加载条逻辑
+        function startLoadingSequence() {
+            const screen = document.getElementById('loading-screen');
+            if(!screen) return;
+            screen.style.display = 'flex'; // Ensure visible now
+            
+            const bar = document.getElementById('loading-bar');
+            
+            setTimeout(() => bar.style.width = '60%', 200);
+            setTimeout(() => bar.style.width = '100%', 1000);
+
+            setTimeout(() => {
+                screen.style.pointerEvents = 'none'; // [FIX] Stop blocking clicks
+                screen.style.opacity = '0';
+                setTimeout(() => screen.style.display = 'none', 800);
+                
+                // Show Intro Stage
+                showStage('stage-0-intro');
+                spawnBgIcon();
+                
+                setTimeout(() => {
+                    const introEl = document.getElementById('intro-text');
+                    if(introEl) {
+                        typeWriter(introEl, INTRO_TEXT, () => {
+                            enableBtn('btn-intro');
+                        });
+                    }
+                }, 800);
+            }, 1800);
+        }
+
+        // [NEW] Responsive System
+        function initResponsive() {
+            const handleResize = () => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                const debugEl = document.getElementById('res-debug');
+                let s = w / 414; 
+                const sceneLayer = document.getElementById('scene-content-layer');
+                if(sceneLayer) {
+                    if (h < 700) {
+                        const hScale = h / 800;
+                        s = Math.min(s, hScale);
+                    }
+                    // [FIX] Increase minimum scale to prevent items from becoming too small
+                    s = Math.min(Math.max(s, 0.75), 1.3);
+                    sceneLayer.style.transform = `scale(${s})`;
+                }
+                if(debugEl) debugEl.innerText = `Adapt: ${w}x${h} (s:${s.toFixed(2)})`;
+            };
+            window.addEventListener('resize', handleResize);
+            handleResize(); 
+        }
+
+        // ================= 特效引擎 (Theme Engine) =================  
+        function applyTheme(theme) {
+            const layer = document.getElementById('theme-layer');
+            const body = document.body;
+            layer.innerHTML = ''; // 清除旧特效
+            
+            // 默认背景恢复
+            if(theme === 'default') {
+                body.style.backgroundColor = '#FFFBF0';
+                document.getElementById('bg-base-layer').style.opacity = '1';
+                return;
+            }
+
+            // 默认过渡状态
+            document.getElementById('bg-base-layer').style.opacity = '1';
+            body.style.backgroundColor = '#FFFBF0';
+
+            switch(theme) {
+                case 'sakura': // 1. 樱花
+                    body.style.backgroundColor = '#fff0f5'; 
+                    createParticles(layer, '🌸', 20, 'fx-sakura', 5, 10);
+                    break;
+                case 'planes': // 2. 纸飞机
+                    body.style.backgroundColor = '#e6f7ff'; 
+                    createParticles(layer, '✈️', 6, 'fx-plane', 8, 15);
+                    break;
+                case 'gaming': // 3. 游戏
+                    document.getElementById('bg-base-layer').style.opacity = '0.1'; 
+                    body.style.backgroundColor = '#1a103c'; 
+                    const vs = document.createElement('div');
+                    vs.className = 'fx-game-vs'; vs.innerText = 'VS';
+                    layer.appendChild(vs);
+                    const icons = ['🎮', '⚡', '🔥', '👾', '⚔️', '🏆'];
+                    for(let i=0; i<15; i++) {
+                        const p = document.createElement('div');
+                        p.className = 'fx-game-icon';
+                        p.innerText = icons[Math.floor(Math.random()*icons.length)];
+                        p.style.left = Math.random()*90 + 5 + 'vw';
+                        p.style.top = Math.random()*90 + 5 + 'vh';
+                        p.style.animationDelay = Math.random()*2 + 's';
+                        layer.appendChild(p);
+                    }
+                    break;
+                case 'warmth': // 4. 暖阳
+                    document.getElementById('bg-base-layer').style.opacity = '0.2';
+                    body.style.backgroundColor = '#2c3e50';
+                    const glow = document.createElement('div');
+                    glow.className = 'fx-warm-glow';
+                    layer.appendChild(glow);
+                    break;
+                case 'laugh': // 5. 欢笑
+                    body.style.backgroundColor = '#fffde7'; 
+                    createParticles(layer, ['😂','🤣','😹','😆'][Math.floor(Math.random()*4)], 15, 'fx-laugh', 4, 8, true);
+                    break;
+                case 'winter': // 6. 过冬
+                    body.style.backgroundColor = '#f0f8ff'; 
+                    const frost = document.createElement('div');
+                    frost.className = 'fx-frost';
+                    layer.appendChild(frost);
+                    for(let i=0; i<20; i++) setTimeout(createSnow, i*50);
+                    break;
+                case 'stars': // 7. 星空
+                    document.getElementById('bg-base-layer').style.opacity = '0';
+                    body.style.backgroundColor = '#0f172a'; 
+                    for(let i=0; i<50; i++) {
+                        const s = document.createElement('div');
+                        s.className = 'fx-star';
+                        const sz = Math.random()*3 + 1 + 'px';
+                        s.style.width = sz; s.style.height = sz;
+                        s.style.left = Math.random()*100 + 'vw'; s.style.top = Math.random()*100 + 'vh';
+                        s.style.animationDelay = Math.random()*2 + 's';
+                        layer.appendChild(s);
+                    }
+                    for(let i=0; i<3; i++) {
+                        const ss = document.createElement('div');
+                        ss.className = 'fx-shooting-star';
+                        ss.style.top = Math.random()*30 + 'vh';
+                        ss.style.right = Math.random()*30 + 'vw';
+                        ss.style.animationDelay = i*2 + 's';
+                        layer.appendChild(ss);
+                    }
+                    break;
+                case 'balloons': // 8. 气球
+                    createParticles(layer, '🎈', 12, 'fx-balloon', 6, 12, true);
+                    break;
+                case 'gold': // 9. 金色
+                    document.getElementById('bg-base-layer').style.opacity = '0.5';
+                    body.style.backgroundColor = '#fffbe6';
+                    for(let i=0; i<40; i++) {
+                        const g = document.createElement('div');
+                        g.className = 'fx-gold';
+                        g.style.left = Math.random()*100 + 'vw';
+                        g.style.animationDuration = Math.random()*2 + 3 + 's';
+                        g.style.animationDelay = Math.random()*2 + 's';
+                        layer.appendChild(g);
+                    }
+                    break;
+            }
+        }
+
+        function createParticles(container, charOrArr, count, className, minDur, maxDur, randomizeChar=false) {
+            for(let i=0; i<count; i++) {
+                const p = document.createElement('div');
+                p.className = className;
+                if(randomizeChar && Array.isArray(charOrArr)) {
+                    p.innerText = charOrArr[Math.floor(Math.random()*charOrArr.length)];
+                } else if (randomizeChar) {
+                     p.innerText = charOrArr; 
+                     if(className === 'fx-laugh') p.innerText = ['😂','🤣','😹','😆'][Math.floor(Math.random()*4)];
+                     if(className === 'fx-balloon') p.style.filter = `hue-rotate(${Math.random()*360}deg)`;
+                } else {
+                    p.innerText = charOrArr;
+                }
+                
+                p.style.left = Math.random() * 90 + 5 + 'vw';
+                const dur = Math.random() * (maxDur - minDur) + minDur;
+                p.style.animationDuration = dur + 's';
+                p.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(p);
+            }
+        }
+
+        // ================= 常规逻辑 =================  
+
+        function spawnBgIcon() {
+            const container = document.getElementById('bg-base-layer');
+            const icons = ['🎄', '🎅', '🦌', '🎁', '🔔'];
+            setInterval(() => {
+                if(container.childElementCount > 10) return;
+                const icon = document.createElement('div');
+                icon.className = 'floating-icon'; 
+                icon.style.cssText = `position:absolute; font-size:3rem; opacity:0.15; filter:blur(2px); user-select:none; animation: floatUp 20s linear infinite;`;
+                icon.innerText = icons[Math.floor(Math.random()*icons.length)];
+                icon.style.left = Math.random()*90 + 'vw';
+                container.appendChild(icon);
+                setTimeout(()=>icon.remove(), 20000);
+            }, 2000);
+            const style = document.createElement('style');
+            style.innerHTML = `@keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); } 100% { transform: translateY(-10vh) rotate(20deg); } }`;
+            document.head.appendChild(style);
+        }
+
+        // [核心] 优化的转场逻辑
+        function showStage(id) {
+            // 1. 找到当前激活的场景，执行退出动画
+            const current = document.querySelector('.overlay-stage.active');
+            
+            const enterNewStage = () => {
+                const target = document.getElementById(id);
+                if(target) {
+                    target.style.display = 'flex';
+                    // 强制重绘确保transition生效
+                    target.offsetHeight; 
+                    target.classList.add('active');
+                }
+            };
+
+            if (current) {
+                current.classList.add('exit'); // 触发退出CSS动画
+                current.classList.remove('active');
+                
+                // 等待CSS过渡结束 (0.5s)
+                setTimeout(() => {
+                    current.style.display = 'none';
+                    current.classList.remove('exit');
+                    enterNewStage();
+                }, 550);
+            } else {
+                enterNewStage();
+            }
+        }
+
+        function typeWriter(element, text, onComplete) {
+            element.innerHTML = ""; element.classList.add('typing-cursor');
+            let i = 0;
+            const t = setInterval(() => {
+                if (i < text.length) {
+                    const char = text.charAt(i);
+                    element.innerHTML += (char === '\n' ? '<br>' : char);
+                    i++;
+                    element.parentElement.scrollTop = element.parentElement.scrollHeight;
+                } else {
+                    clearInterval(t);
+                    element.classList.remove('typing-cursor');
+                    if (onComplete) onComplete();
+                }
+            }, 30); // [FIX] Faster typing speed (50->30)
+        }
+
+        function enableBtn(id) { document.getElementById(id).classList.remove('disabled'); }
+
+        function toggleMusic(e) {
+            e.stopPropagation();
+            if (bgm.paused) {
+                bgm.play(); musicBtn.classList.add('playing'); musicBtn.innerText = '🎵';
+            } else {
+                bgm.pause(); musicBtn.classList.remove('playing'); musicBtn.innerText = '🚫';
+            }
+        }
+
+        function startMemories() {
+            if(bgm.paused) toggleMusic({stopPropagation:()=>{}});
+            showStage('stage-1-memory');
+            renderMemory(0);
+        }
+
+        function renderMemory(index) {
+            currentMemIndex = index;
+            const data = MEMORIES[index];
+            
+            // [UPDATED] Find dialog container and set theme class
+            const dialog = document.querySelector('#stage-1-memory .dialog-box');
+            if(dialog) {
+                // Reset basic class and add theme
+                dialog.className = 'dialog-box theme-' + data.theme;
+            }
+            
+            const titleEl = document.getElementById('mem-title');
+            const textEl = document.getElementById('mem-text');
+            const btn = document.getElementById('btn-mem');
+
+            applyTheme(data.theme);
+
+            // 内容切换小动画
+            textEl.style.opacity = '0';
+            setTimeout(() => {
+                textEl.style.opacity = '1';
+                titleEl.innerText = data.t;
+                btn.classList.add('disabled'); 
+                typeWriter(textEl, data.c, () => {
+                    enableBtn('btn-mem');
+                });
+            }, 200);
+        }
+
+        function nextMemory() {
+            if (currentMemIndex < MEMORIES.length - 1) {
+                renderMemory(currentMemIndex + 1);
+            } else {
+                applyTheme('default'); // 恢复默认背景
+                // [CHANGED] Go to Photo Slideshow instead of Invite
+                startPhotoSlideshow();
+            }
+        }
+
+        function startHeartAnimation() {
+            // 这里的逻辑稍有不同：Invite 退出，GameLayer 浮现
+            const inviteStage = document.getElementById('stage-2-invite');
+            // 手动触发Invite的退出动画
+            inviteStage.classList.add('exit');
+            inviteStage.classList.remove('active');
+            setTimeout(() => { inviteStage.style.display = 'none'; inviteStage.classList.remove('exit'); }, 600);
+
+            const layer = document.getElementById('game-layer');
+            layer.style.display = 'block'; 
+
+            const w = window.innerWidth; const h = window.innerHeight;
+            const cx = w / 2; const cy = h / 2;
+            
+            // [UPDATED] Responsive Scale Calculation for Heart
+            // We need to fit x=[-16, 16], y=[-13, 13] into screen with padding.
+            // Box radius approx 30px, margin 10px -> Total buffer ~45px.
+            const xSpace = (w / 2) - 45;
+            const ySpace = (h / 2) - 60;
+            
+            // Calculate max allowed scale
+            const scaleX = xSpace / 16;
+            const scaleY = ySpace / 13;
+            
+            // Use conservative scale, cap at 15 (desktop size)
+            const scale = Math.min(scaleX, scaleY, 15);
+
+            const delay = 200; 
+
+            MESSAGES.forEach((msg, i) => {
+                const t = (i / MESSAGES.length) * 2 * Math.PI;
+                let x = 16 * Math.pow(Math.sin(t), 3);
+                let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                
+                const targetX = (x * scale + cx) - 30;
+                const targetY = (y * scale + cy) - 30;
+
+                const box = document.createElement('div');
+                box.className = 'msg-box';
+                box.innerText = msg;
+                box.style.left = (cx - 30) + 'px'; box.style.top = (cy - 30) + 'px';
+                layer.appendChild(box);
+                
+                // 爆炸特效粒子
+                createExplosion(cx, cy);
+
+                setTimeout(() => {
+                    box.style.left = targetX + 'px';
+                    box.style.top = targetY + 'px';
+                    box.style.opacity = '1';
+                    box.style.transform = 'scale(1)';
+                    // 随机开始呼吸动画，避免整齐划一
+                    setTimeout(() => box.classList.add('floating'), 1000 + Math.random() * 1000);
+                }, i * delay); 
+            });
+
+            const totalTime = (MESSAGES.length) * delay + 2000;
+            setTimeout(finishGame, totalTime);
+        }
+
+        function createExplosion(x, y) {
+            // 简单的粒子生成
+            for(let k=0; k<4; k++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.background = ['#FF8FA3','#B5EAD7','#FFE577'][Math.floor(Math.random()*3)];
+                p.style.left = x + 'px'; p.style.top = y + 'px';
+                
+                // 随机方向
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 50 + 20;
+                p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+                p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+                
+                p.style.animation = `explode 0.6s ease-out forwards`;
+                document.getElementById('game-layer').appendChild(p);
+                setTimeout(()=>p.remove(), 600);
+            }
+        }
+
+        function finishGame() {
+            // 隐藏游戏层
+            const layer = document.getElementById('game-layer');
+            // 简单渐隐
+            layer.style.transition = 'opacity 0.8s';
+            layer.style.opacity = '0';
+            setTimeout(() => { layer.style.display = 'none'; }, 800);
+            
+            // [CHANGED] Game finished, go to Gift Card (Photos already shown)
+            showStage('stage-3-card');
+        }
+
+        // [NEW] Photo Slideshow Logic
+        function startPhotoSlideshow() {
+            // Define function to go to next stage (Invite/Game)
+            const nextStage = () => {
+                 // [BGM SWITCH] 切换背景音乐
+                 const bgm = document.getElementById('bgm');
+                 if(bgm) {
+                     // 网易云纯音乐直链 -> Gitee MP3
+                     bgm.src = "https://gitee.com/konatatata/material/raw/master/Santa's%20Christmas%20Bells%20-%20Jingle%20Bells.mp3";
+                     bgm.play().catch(e => console.log("Switch BGM play failed", e));
+                 }
+
+                 showStage('stage-2-invite');
+                 setTimeout(() => {
+                    typeWriter(document.getElementById('invite-text'), INVITE_TEXT, () => {
+                        // 自动流程：1.5秒后自动开始游戏
+                        setTimeout(startHeartAnimation, 1500);
+                    });
+                }, 600);
+            };
+
+            if (!PHOTO_MEMORIES || PHOTO_MEMORIES.length === 0) {
+                nextStage();
+                return;
+            }
+            
+            showStage('stage-photo-gallery');
+            const frame = document.getElementById('photo-frame');
+            const img = document.getElementById('photo-display');
+            let idx = 0;
+
+            // Start animation loop
+            const playSlide = () => {
+                if (idx >= PHOTO_MEMORIES.length) {
+                    // Finished, go to Game Invite
+                    nextStage();
+                    return;
+                }
+
+                // Fade out frame slightly to change image
+                frame.style.opacity = '0';
+                
+                setTimeout(() => {
+                    img.src = PHOTO_MEMORIES[idx];
+                    // Set a random base rotation for this photo via CSS Variable
+                    frame.style.setProperty('--rot', (Math.random() * 6 - 3) + 'deg');
+                    
+                    // Load image then show
+                    img.onload = () => {
+                        frame.style.opacity = '1';
+                        frame.classList.add('show');
+                        idx++;
+                        // Show for 3.5 seconds
+                        setTimeout(playSlide, 3500);
+                    };
+                    // Handle load error
+                    img.onerror = () => {
+                        console.log("Image load failed, skipping");
+                        idx++;
+                        playSlide();
+                    }
+                }, 600);
+            };
+
+            playSlide();
+        }
+
+        // === NEW: Handle Balloon Interaction ===
+        function handleBalloonClick(e, wrapper) {
+            e.stopPropagation();
+            // Check if the click originated from the basket (The secret gift box)
+            if (e.target.closest('.balloon-basket')) {
+                const modal = document.getElementById('secret-modal');
+                modal.style.display = 'flex';
+                // Force reflow
+                void modal.offsetWidth;
+                modal.classList.add('active');
+            } else {
+                // Regular interaction
+                interact('balloon', wrapper);
+            }
+        }
+
+        function closeSecret() {
+            const modal = document.getElementById('secret-modal');
+            modal.classList.remove('active');
+            setTimeout(() => { modal.style.display = 'none'; }, 600);
+        }
+
+        // === NEW: Start Balloon Stars ===
+        function startBalloonStars() {
+            const balloon = document.querySelector('.balloon-wrapper');
+            if(!balloon) return;
+            
+            // Create a star every 600ms
+            setInterval(() => {
+                const scene = document.getElementById('main-scene');
+                if (!scene || !scene.classList.contains('active')) return;
+
+                const rect = balloon.getBoundingClientRect();
+                // Only spawn if visible on screen
+                if (rect.top > window.innerHeight || rect.left < -100) return;
+
+                const star = document.createElement('div');
+                star.className = 'falling-star';
+                star.innerText = ['✨', '⭐', '🌟'][Math.floor(Math.random()*3)];
+                // Add some randomness to position relative to center of balloon
+                star.style.left = (rect.left + rect.width / 2 + (Math.random() * 20 - 10)) + 'px';
+                star.style.top = (rect.top + rect.height / 2 + 20) + 'px';
+                
+                document.body.appendChild(star);
+                setTimeout(() => star.remove(), 1500);
+            }, 600);
+        }
+
+        // Interaction handler for final scene
+        function interact(type, el) {
+            const body = el.querySelector('.hot-air-balloon');
+            const bubble = el.querySelector('.pop-bubble');
+            
+            if(body) {
+                body.classList.remove('anim-shake');
+                void body.offsetWidth;
+                body.classList.add('anim-shake');
+            }
+            
+            // Pick a unique random message
+            if (availableBalloonMsgs.length === 0) {
+                availableBalloonMsgs = [...BALLOON_MESSAGES];
+            }
+            const randomIndex = Math.floor(Math.random() * availableBalloonMsgs.length);
+            const msg = availableBalloonMsgs.splice(randomIndex, 1)[0];
+            
+            if(bubble) {
+                bubble.innerText = msg;
+                bubble.classList.remove('show');
+                void bubble.offsetWidth;
+                bubble.classList.add('show');
+            }
+
+            // Drop a particle
+            createExplosion(el.getBoundingClientRect().left + 60, el.getBoundingClientRect().top + 140);
+        }
+        
+        // Generic doll interaction
+        function interactDoll(el, name) {
+            el.classList.remove('doll-jump');
+            void el.offsetWidth;
+            el.classList.add('doll-jump');
+            
+            const bubble = el.querySelector('.pop-bubble');
+            if(bubble) {
+                bubble.classList.remove('show');
+                void bubble.offsetWidth;
+                bubble.classList.add('show');
+            }
+        }
+
+        function startSleighLoop() {
+            const s = document.getElementById('sleigh');
+            if(!s) return;
+            
+            const runAnimation = () => {
+                s.classList.remove('fly');
+                void s.offsetWidth;
+                s.classList.add('fly');
+                // Schedule next run (animation takes 12s, wait 3s more)
+                setTimeout(runAnimation, 15000);
+            };
+            runAnimation();
+        }
+
+        function revealFinal() {
+            const cardStage = document.getElementById('stage-3-card');
+            // 触发退出动画
+            cardStage.classList.add('exit');
+            cardStage.classList.remove('active');
+            
+            // 开启白屏闪光
+            const flash = document.getElementById('flash-overlay');
+            flash.style.opacity = '1';
+            
+            // 隐藏顶部的灯（为了结局干净）
+            document.querySelector('.light-rope').classList.add('hidden');
+
+            setTimeout(() => {
+                cardStage.style.display = 'none';
+                const mainScene = document.getElementById('main-scene');
+                mainScene.classList.add('active');
+                
+                applyTheme('gold'); 
+                
+                // 慢慢淡出白屏，显露结局
+                setTimeout(() => { 
+                    flash.style.opacity = '0'; 
+                    // Start flying animations
+                    startSleighLoop();
+                    startBalloonStars();
+                }, 500);
+            }, 1200); 
+        }
+
+        function createSnow() {
+            const c = document.getElementById('snow-container');
+            if (c.childElementCount > 40) return; 
+            const s = document.createElement('div');
+            s.classList.add('snowflake');
+            const size = Math.random() * 8 + 5 + 'px';
+            s.style.width = size; s.style.height = size;
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.opacity = Math.random() * 0.5 + 0.3;
+            const d = Math.random() * 5 + 5 + 's';
+            s.style.animation = `fall ${d} linear infinite`;
+            c.appendChild(s);
+            setTimeout(() => s.remove(), parseFloat(d) * 1000);
+        }
+    </script>  
+</body>  
+</html>
