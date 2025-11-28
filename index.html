@@ -8,6 +8,7 @@
     <meta name="referrer" content="no-referrer">
     <title>Merry Christmas! 🎄</title>  
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">  
+    <script src="https://cdn.tailwindcss.com"></script>
   
     <style>  
         /* --- 1. 核心配色与基础设置 --- */  
@@ -423,6 +424,18 @@
             border: 2px dashed #d4a373;
             box-shadow: 0 15px 40px rgba(0,0,0,0.05);
         }
+
+        /* [FIX ADDED] Scrollable content for Apology theme to prevent button overflow */
+        .dialog-box.theme-apology .dialog-content {
+             max-height: 55vh; /* Limit height relative to viewport */
+             overflow-y: auto; /* Allow scrolling */
+             padding-right: 8px; /* Padding for scrollbar */
+        }
+        /* Custom scrollbar for Apology theme */
+        .dialog-box.theme-apology .dialog-content::-webkit-scrollbar { width: 4px; }
+        .dialog-box.theme-apology .dialog-content::-webkit-scrollbar-track { background: transparent; }
+        .dialog-box.theme-apology .dialog-content::-webkit-scrollbar-thumb { background: #d4a373; border-radius: 4px; opacity: 0.5; }
+
         .dialog-box.theme-apology::before {
             content: '🥺'; /* Shy/Sincere emoji */
             position: absolute; top: -25px; right: -10px; 
@@ -1132,8 +1145,9 @@
 <script type="importmap">
 {
   "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
   }
 }
 </script>
@@ -2026,10 +2040,10 @@
                     const char = text.charAt(i);
                     element.innerHTML += (char === '\n' ? '<br>' : char);
                     i++;
-                    // [MODIFIED] Auto scroll logic: 
-                    // Only scroll if it's NOT a long scrollable text area, or ensure we see the bottom.
-                    // For the letter, we want to type it out. User can scroll up if they missed top.
-                    element.parentElement.scrollTop = element.parentElement.scrollHeight;
+                    
+                    // [FIX] Scroll the element itself (for apology/long text)
+                    // This ensures the button at the bottom remains accessible or text scrolls up
+                    element.scrollTop = element.scrollHeight; 
                 } else {
                     clearInterval(t);
                     element.classList.remove('typing-cursor');
