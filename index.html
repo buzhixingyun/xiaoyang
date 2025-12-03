@@ -1226,7 +1226,7 @@
     <!-- 背景音乐 (预加载) -->
     <audio id="bgm" loop preload="auto">
         <!-- 替换为国内可访问的网易云音乐直链 -->
-        <source src="https://music.163.com/song/media/outer/url?id=478507889.mp3" type="audio/mpeg">
+        <source src="https://music.163.com/song/media/outer/url?id=478507889" type="audio/mpeg">
     </audio>
     <div id="music-control" onclick="toggleMusic(event)">🎵</div>
   
@@ -2323,7 +2323,7 @@
              const bgm = document.getElementById('bgm');
              if(bgm) {
                  // 网易云纯音乐直链 -> Gitee MP3 (Jingle Bells)
-                 bgm.src = "https://gitee.com/konatatata/material/raw/master/Santa's%20Christmas%20Bells%20-%20Jingle%20Bells.mp3";
+                 bgm.src = "https://gitee.com/konatatata/material/raw/master/%E8%A7%86%E9%A2%91%E8%BD%AC%E9%9F%B3%E9%A2%9120251203201236.mp3";
                  bgm.play().catch(e => console.log("Switch BGM play failed", e));
              }
 
